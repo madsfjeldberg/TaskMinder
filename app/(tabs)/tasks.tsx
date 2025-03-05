@@ -24,6 +24,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../../firebase";
 import { Feather } from "@expo/vector-icons";
+import TaskList from "@/components/custom/TaskList";
 
 // Task interface
 interface Task {
@@ -520,32 +521,13 @@ export default function TasksScreen() {
         </View>
       ) : (
         // Task list
-        <TouchableOpacity
-          style={{ flex: 1 }}
-          activeOpacity={1}
-          onPress={() => {
-            if (editingTaskId) {
-              saveTaskTitle(editingTaskId);
-            }
-          }}
-        >
-          <FlatList
-            data={tasks}
-            renderItem={renderTask}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContainer}
-          />
-          <TouchableOpacity
-            style={[
-              styles.addTaskButton,
-              editingTaskId && styles.addTaskButtonDisabled,
-            ]}
-            onPress={createNewTask}
-            disabled={editingTaskId !== null}
-          >
-            <Feather name="plus" size={24} color="#fff" />
-          </TouchableOpacity>
-        </TouchableOpacity>
+        <TaskList
+          tasks={tasks}
+          editingTaskId={editingTaskId}
+          saveTaskTitle={saveTaskTitle}
+          createNewTask={createNewTask}
+          renderTask={renderTask}
+        />
       )}
 
       {renderNewListModal()}
