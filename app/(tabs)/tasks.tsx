@@ -244,6 +244,27 @@ export default function TasksScreen() {
     }
   };
 
+  // Delete a task
+  const deleteTask = async (taskId: string) => {
+    try {
+      // Remove from Firestore
+      const taskRef = doc(db, "tasks", taskId);
+      await deleteDoc(taskRef);
+
+      // Remove from local state
+      setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+
+      // Reset editing state if needed
+      if (editingTaskId === taskId) {
+        setEditingTaskId(null);
+        setEditingTaskText("");
+      }
+    } catch (err) {
+      console.error("Error deleting task:", err);
+      Alert.alert("Error", "Could not delete task. Please try again.");
+    }
+  };
+
   // Save task after editing
   const saveTaskTitle = async (taskId: string) => {
     if (!editingTaskText.trim()) {
@@ -275,27 +296,6 @@ export default function TasksScreen() {
     } catch (err) {
       console.error("Error updating task title:", err);
       Alert.alert("Error", "Could not update task. Please try again.");
-    }
-  };
-
-  // Delete a task
-  const deleteTask = async (taskId: string) => {
-    try {
-      // Remove from Firestore
-      const taskRef = doc(db, "tasks", taskId);
-      await deleteDoc(taskRef);
-
-      // Remove from local state
-      setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
-
-      // Reset editing state if needed
-      if (editingTaskId === taskId) {
-        setEditingTaskId(null);
-        setEditingTaskText("");
-      }
-    } catch (err) {
-      console.error("Error deleting task:", err);
-      Alert.alert("Error", "Could not delete task. Please try again.");
     }
   };
 
@@ -332,6 +332,10 @@ export default function TasksScreen() {
           if (!isEditing) {
             toggleTaskCompletion(item.id, item.completed);
           }
+        }}
+        onLongPress={() => {
+          setEditingTaskId(item.id);
+          setEditingTaskText(item.title);
         }}
       >
         <View style={styles.taskContent}>
@@ -516,7 +520,15 @@ export default function TasksScreen() {
         </View>
       ) : (
         // Task list
-        <View style={{ flex: 1 }}>
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          activeOpacity={1}
+          onPress={() => {
+            if (editingTaskId) {
+              saveTaskTitle(editingTaskId);
+            }
+          }}
+        >
           <FlatList
             data={tasks}
             renderItem={renderTask}
@@ -524,12 +536,16 @@ export default function TasksScreen() {
             contentContainerStyle={styles.listContainer}
           />
           <TouchableOpacity
-            style={styles.addTaskButton}
+            style={[
+              styles.addTaskButton,
+              editingTaskId && styles.addTaskButtonDisabled,
+            ]}
             onPress={createNewTask}
+            disabled={editingTaskId !== null}
           >
             <Feather name="plus" size={24} color="#fff" />
           </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
       )}
 
       {renderNewListModal()}
@@ -767,5 +783,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 3,
     zIndex: 999,
+  },
+  addTaskButtonDisabled: {
+    backgroundColor: "#bdc3c7",
+    elevation: 0,
+    shadowOpacity: 0,
   },
 });
