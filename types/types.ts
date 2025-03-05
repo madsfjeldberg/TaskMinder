@@ -27,4 +27,18 @@ interface TaskListProps {
   renderTask: ListRenderItem<dbTask>;
 }
 
-export type { dbTask, dbTaskList, TaskListProps, HorizontalScrollListProps };
+interface NewListModalProps {
+  isVisible: boolean;
+  onClose: () => void;
+  onCreateList: () => void;
+  newListName: string;
+  setNewListName: (name: string) => void;
+}
+
+export type {
+  dbTask,
+  dbTaskList,
+  TaskListProps,
+  HorizontalScrollListProps,
+  NewListModalProps,
+};

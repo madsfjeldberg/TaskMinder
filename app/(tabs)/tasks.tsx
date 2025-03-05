@@ -3,11 +3,9 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   ActivityIndicator,
   TouchableOpacity,
   TextInput,
-  ScrollView,
   Alert,
 } from "react-native";
 import Modal from "react-native-modal";
@@ -27,6 +25,7 @@ import { Feather } from "@expo/vector-icons";
 import TaskList from "@/components/custom/TaskList";
 import { dbTask, dbTaskList } from "@/types/types";
 import HorizontalListScroll from "@/components/custom/HorizontalScrollList";
+import NewListModal from "@/components/custom/NewListModal";
 
 export default function TasksScreen() {
   const [tasks, setTasks] = useState<dbTask[]>([]);
@@ -370,50 +369,57 @@ export default function TasksScreen() {
 
   // New List Modal
   const renderNewListModal = () => (
-    <Modal
+    <NewListModal
       isVisible={isNewListModalVisible}
-      onBackdropPress={() => setIsNewListModalVisible(false)}
-      onBackButtonPress={() => setIsNewListModalVisible(false)}
-      backdropOpacity={0.4}
-      backdropTransitionOutTiming={0}
-      animationIn="slideInUp"
-      animationOut="fadeOut"
-      useNativeDriver={true}
-      avoidKeyboard={true}
-      style={styles.modal}
-    >
-      <View style={styles.modalContent}>
-        <Text style={styles.modalTitle}>Create New List</Text>
+      onClose={() => setIsNewListModalVisible(false)}
+      onCreateList={createNewTaskList}
+      newListName={newListName}
+      setNewListName={setNewListName}
+    />
+    // <Modal
+    //   isVisible={isNewListModalVisible}
+    //   onBackdropPress={() => setIsNewListModalVisible(false)}
+    //   onBackButtonPress={() => setIsNewListModalVisible(false)}
+    //   backdropOpacity={0.4}
+    //   backdropTransitionOutTiming={0}
+    //   animationIn="slideInUp"
+    //   animationOut="fadeOut"
+    //   useNativeDriver={true}
+    //   avoidKeyboard={true}
+    //   style={styles.modal}
+    // >
+    //   <View style={styles.modalContent}>
+    //     <Text style={styles.modalTitle}>Create New List</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="List Name (e.g., Work, Home, Vacation)"
-          placeholderTextColor="#999"
-          value={newListName}
-          onChangeText={setNewListName}
-          autoFocus
-        />
+    //     <TextInput
+    //       style={styles.input}
+    //       placeholder="List Name (e.g., Work, Home, Vacation)"
+    //       placeholderTextColor="#999"
+    //       value={newListName}
+    //       onChangeText={setNewListName}
+    //       autoFocus
+    //     />
 
-        <View style={styles.modalButtons}>
-          <TouchableOpacity
-            style={[styles.modalButton, styles.cancelButton]}
-            onPress={() => {
-              setNewListName("");
-              setIsNewListModalVisible(false);
-            }}
-          >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
+    //     <View style={styles.modalButtons}>
+    //       <TouchableOpacity
+    //         style={[styles.modalButton, styles.cancelButton]}
+    //         onPress={() => {
+    //           setNewListName("");
+    //           setIsNewListModalVisible(false);
+    //         }}
+    //       >
+    //         <Text style={styles.cancelButtonText}>Cancel</Text>
+    //       </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.modalButton, styles.createButton]}
-            onPress={createNewTaskList}
-          >
-            <Text style={styles.createButtonText}>Create</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
+    //       <TouchableOpacity
+    //         style={[styles.modalButton, styles.createButton]}
+    //         onPress={createNewTaskList}
+    //       >
+    //         <Text style={styles.createButtonText}>Create</Text>
+    //       </TouchableOpacity>
+    //     </View>
+    //   </View>
+    // </Modal>
   );
 
   // Loading state during initial list fetch
@@ -560,16 +566,6 @@ const styles = StyleSheet.create({
   },
   selectedListItemText: {
     fontWeight: "700",
-  },
-  addListButton: {
-    width: 44,
-    height: 44,
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: 4,
-  },
-  listContainer: {
-    padding: 16,
   },
   taskItem: {
     backgroundColor: "#fff",
@@ -725,27 +721,5 @@ const styles = StyleSheet.create({
   createButtonText: {
     color: "#fff",
     fontWeight: "600",
-  },
-  addTaskButton: {
-    position: "absolute",
-    right: 20,
-    bottom: 100,
-    width: 50,
-    height: 50,
-    borderRadius: 30,
-    backgroundColor: "#2ecc71",
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    zIndex: 999,
-  },
-  addTaskButtonDisabled: {
-    backgroundColor: "#bdc3c7",
-    elevation: 0,
-    shadowOpacity: 0,
   },
 });
