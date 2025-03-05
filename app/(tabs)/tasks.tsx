@@ -25,24 +25,11 @@ import {
 import { db } from "../../firebase";
 import { Feather } from "@expo/vector-icons";
 import TaskList from "@/components/custom/TaskList";
-
-// Task interface
-interface Task {
-  id: string;
-  title: string;
-  completed: boolean;
-}
-
-// List interface
-interface TaskList {
-  id: string;
-  name: string;
-  createdAt: Date;
-}
+import { dbTask, dbTaskList } from "@/types/types";
 
 export default function TasksScreen() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [taskLists, setTaskLists] = useState<TaskList[]>([]);
+  const [tasks, setTasks] = useState<dbTask[]>([]);
+  const [taskLists, setTaskLists] = useState<dbTaskList[]>([]);
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [listsLoading, setListsLoading] = useState(true);
@@ -69,7 +56,7 @@ export default function TasksScreen() {
         console.log(`Found ${querySnapshot.docs.length} task lists`);
 
         // Map the documents to our TaskList interface
-        const listData: TaskList[] = querySnapshot.docs.map((doc) => {
+        const listData: dbTaskList[] = querySnapshot.docs.map((doc) => {
           const data = doc.data();
           return {
             id: doc.id,
@@ -125,7 +112,7 @@ export default function TasksScreen() {
         console.log(`Found ${querySnapshot.docs.length} tasks`);
 
         // Map the documents to our Task interface
-        const tasksList: Task[] = querySnapshot.docs.map((doc) => {
+        const tasksList: dbTask[] = querySnapshot.docs.map((doc) => {
           const data = doc.data();
           return {
             id: doc.id,
@@ -192,7 +179,7 @@ export default function TasksScreen() {
       });
 
       // Add to local state
-      const newList: TaskList = {
+      const newList: dbTaskList = {
         id: docRef.id,
         name: newListName.trim(),
         createdAt: new Date(),
@@ -228,7 +215,7 @@ export default function TasksScreen() {
       const docRef = await addDoc(collection(db, "tasks"), newTask);
 
       // Add to local state
-      const taskWithId: Task = {
+      const taskWithId: dbTask = {
         id: docRef.id,
         title: newTask.title,
         completed: newTask.completed,
@@ -301,7 +288,7 @@ export default function TasksScreen() {
   };
 
   // Render task list item
-  const renderListItem = (list: TaskList) => {
+  const renderListItem = (list: dbTaskList) => {
     const isSelected = selectedListId === list.id;
 
     return (
@@ -323,7 +310,7 @@ export default function TasksScreen() {
   };
 
   // Render each task item
-  const renderTask = ({ item }: { item: Task }) => {
+  const renderTask = ({ item }: { item: dbTask }) => {
     const isEditing = item.id === editingTaskId;
 
     return (

@@ -3,6 +3,7 @@ import { FlatList } from "react-native";
 import { TouchableOpacity } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { StyleSheet } from "react-native";
+import { TaskListProps } from "@/types/types";
 
 
 export default function TaskList({
@@ -11,7 +12,7 @@ export default function TaskList({
   saveTaskTitle,
   createNewTask,
   renderTask,
-}) {
+}: TaskListProps) {
   return (
     <TouchableOpacity
           style={{ flex: 1 }}
