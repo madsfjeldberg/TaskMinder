@@ -26,6 +26,7 @@ import { db } from "../../firebase";
 import { Feather } from "@expo/vector-icons";
 import TaskList from "@/components/custom/TaskList";
 import { dbTask, dbTaskList } from "@/types/types";
+import HorizontalListScroll from "@/components/custom/HorizontalScrollList";
 
 export default function TasksScreen() {
   const [tasks, setTasks] = useState<dbTask[]>([]);
@@ -452,23 +453,12 @@ export default function TasksScreen() {
   return (
     <View style={styles.container}>
       {/* Task Lists Horizontal Scroll */}
-      <View style={styles.listsContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.listsScrollContent}
-        >
-          {taskLists.map((list) => renderListItem(list))}
-
-          <TouchableOpacity
-            style={styles.addListButton}
-            onPress={() => setIsNewListModalVisible(true)}
-          >
-            <Feather name="plus" size={24} color="#3498db" />
-          </TouchableOpacity>
-        </ScrollView>
-      </View>
-
+      <HorizontalListScroll
+        taskLists={taskLists}
+        renderListItem={renderListItem}
+        setIsNewListModalVisible={setIsNewListModalVisible}
+      />
+     
       {/* Loading state for tasks */}
       {loading ? (
         <View style={styles.tasksLoadingContainer}>

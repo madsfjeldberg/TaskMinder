@@ -13,6 +13,12 @@ interface dbTaskList {
   createdAt: Date;
 }
 
+interface HorizontalScrollListProps {
+  taskLists: dbTaskList[];
+  renderListItem: (list: dbTaskList) => React.ReactNode;
+  setIsNewListModalVisible: (visible: boolean) => void;
+}
+
 interface TaskListProps {
   tasks: dbTask[];
   editingTaskId: string | null;
@@ -21,4 +27,4 @@ interface TaskListProps {
   renderTask: ListRenderItem<dbTask>;
 }
 
-export type { dbTask, dbTaskList, TaskListProps };
+export type { dbTask, dbTaskList, TaskListProps, HorizontalScrollListProps };
