@@ -8,7 +8,6 @@ import {
   TextInput,
   Alert,
 } from "react-native";
-import Modal from "react-native-modal";
 import {
   collection,
   getDocs,
@@ -20,12 +19,13 @@ import {
   serverTimestamp,
   deleteDoc,
 } from "firebase/firestore";
-import { db } from "../../firebase";
+import { db } from "../../database/firebase";
 import { Feather } from "@expo/vector-icons";
 import TaskList from "@/components/custom/TaskList";
 import { dbTask, dbTaskList } from "@/types/types";
 import HorizontalListScroll from "@/components/custom/HorizontalScrollList";
 import NewListModal from "@/components/custom/NewListModal";
+import { fetchTaskLists, fetchTasks } from "@/database/api";
 
 export default function TasksScreen() {
   const [tasks, setTasks] = useState<dbTask[]>([]);
@@ -43,102 +43,30 @@ export default function TasksScreen() {
 
   // Fetch task lists from Firestore
   useEffect(() => {
-    const fetchTaskLists = async () => {
-      try {
-        setListsLoading(true);
-        console.log("Fetching task lists...");
-
-        // Create a query against the taskLists collection
-        const listQuery = query(collection(db, "task_lists"));
-
-        // Execute the query
-        const querySnapshot = await getDocs(listQuery);
-        console.log(`Found ${querySnapshot.docs.length} task lists`);
-
-        // Map the documents to our TaskList interface
-        const listData: dbTaskList[] = querySnapshot.docs.map((doc) => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            name: data.name,
-            createdAt: new Date(data.createdAt?.seconds * 1000 || Date.now()),
-          };
-        });
-
-        setTaskLists(listData);
-
-        // Set the first list as selected by default if there's at least one list
-        if (listData.length > 0 && !selectedListId) {
-          setSelectedListId(listData[0].id);
-        }
-      } catch (err) {
-        console.error("Error fetching task lists:", err);
-      } finally {
-        // Always set loading to false, even if there was an error
-        setListsLoading(false);
-      }
-    };
-
-    fetchTaskLists();
-
-    // Set a timeout to force loading to complete even if Firestore is unreachable
-    const timeout = setTimeout(() => {
+    try {
+      setListsLoading(true);
+      fetchTaskLists(setTaskLists, selectedListId, setSelectedListId);  
+    } catch (err) {
+      console.error("Error fetching task lists:", err);
+    } finally {
       setListsLoading(false);
-    }, 5000); // 5 second timeout
+    }
 
-    return () => clearTimeout(timeout);
   }, []);
 
   // Fetch tasks from Firestore, filtered by selected list
   useEffect(() => {
-    const fetchTasks = async () => {
-      if (!selectedListId) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        console.log(`Fetching tasks for list ID: ${selectedListId}`);
-
-        // Create a query against the tasks collection, filtered by list ID
-        const tasksQuery = query(
-          collection(db, "tasks"),
-          where("listId", "==", selectedListId)
-        );
-
-        // Execute the query
-        const querySnapshot = await getDocs(tasksQuery);
-        console.log(`Found ${querySnapshot.docs.length} tasks`);
-
-        // Map the documents to our Task interface
-        const tasksList: dbTask[] = querySnapshot.docs.map((doc) => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            title: data.title,
-            completed: data.completed || false,
-          };
-        });
-
-        setTasks(tasksList);
-      } catch (err) {
-        console.error("Error fetching tasks:", err);
-        setError("Failed to load tasks. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTasks();
-
-    // Set a timeout to force loading to complete
-    const timeout = setTimeout(() => {
+    try {
+      setLoading(true);
+      fetchTasks(setTasks, selectedListId, setError);
+    } catch (err) {
+      console.error("Error fetching tasks:", err);
+    } finally {
       setLoading(false);
-    }, 5000); // 5 second timeout
+    }
 
-    return () => clearTimeout(timeout);
   }, [selectedListId]);
+
 
   // Toggle task completion status
   const toggleTaskCompletion = async (
@@ -376,50 +304,6 @@ export default function TasksScreen() {
       newListName={newListName}
       setNewListName={setNewListName}
     />
-    // <Modal
-    //   isVisible={isNewListModalVisible}
-    //   onBackdropPress={() => setIsNewListModalVisible(false)}
-    //   onBackButtonPress={() => setIsNewListModalVisible(false)}
-    //   backdropOpacity={0.4}
-    //   backdropTransitionOutTiming={0}
-    //   animationIn="slideInUp"
-    //   animationOut="fadeOut"
-    //   useNativeDriver={true}
-    //   avoidKeyboard={true}
-    //   style={styles.modal}
-    // >
-    //   <View style={styles.modalContent}>
-    //     <Text style={styles.modalTitle}>Create New List</Text>
-
-    //     <TextInput
-    //       style={styles.input}
-    //       placeholder="List Name (e.g., Work, Home, Vacation)"
-    //       placeholderTextColor="#999"
-    //       value={newListName}
-    //       onChangeText={setNewListName}
-    //       autoFocus
-    //     />
-
-    //     <View style={styles.modalButtons}>
-    //       <TouchableOpacity
-    //         style={[styles.modalButton, styles.cancelButton]}
-    //         onPress={() => {
-    //           setNewListName("");
-    //           setIsNewListModalVisible(false);
-    //         }}
-    //       >
-    //         <Text style={styles.cancelButtonText}>Cancel</Text>
-    //       </TouchableOpacity>
-
-    //       <TouchableOpacity
-    //         style={[styles.modalButton, styles.createButton]}
-    //         onPress={createNewTaskList}
-    //       >
-    //         <Text style={styles.createButtonText}>Create</Text>
-    //       </TouchableOpacity>
-    //     </View>
-    //   </View>
-    // </Modal>
   );
 
   // Loading state during initial list fetch
