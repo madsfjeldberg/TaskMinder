@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,9 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  Platform,
+  Modal,
+  SafeAreaView,
 } from "react-native";
 import {
   collection,
@@ -26,6 +29,18 @@ import { dbTask, dbTaskList } from "@/types/types";
 import HorizontalListScroll from "@/components/custom/HorizontalScrollList";
 import NewListModal from "@/components/custom/NewListModal";
 import { fetchTaskLists, fetchTasks } from "@/database/api";
+import { MenuProvider } from "react-native-popup-menu";
+import ContextMenu from "react-native-context-menu-view";
+import MapView, { Marker } from "react-native-maps";
+import { requestForegroundPermissionsAsync, getCurrentPositionAsync } from "expo-location";
+
+type TaskMarker = {
+  coordinate: {
+    latitude: number;
+    longitude: number;
+  };
+};
+
 
 export default function TasksScreen() {
   const [tasks, setTasks] = useState<dbTask[]>([]);
@@ -36,22 +51,67 @@ export default function TasksScreen() {
   const [error, setError] = useState<string | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTaskText, setEditingTaskText] = useState("");
-
-  // New list creation state
   const [isNewListModalVisible, setIsNewListModalVisible] = useState(false);
   const [newListName, setNewListName] = useState("");
+  const [isMapModalVisible, setIsMapModalVisible] = useState(false);
+  const [taskMarker, setTaskMarker] = useState<TaskMarker | null>(null);
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    latitudeDelta: number;
+    longitudeDelta: number;
+  }>({
+    // copenhagen
+    latitude: 55.676098,
+    longitude: 12.568337,
+    latitudeDelta: 0.2,
+    longitudeDelta: 0.2,
+  });
+  
+
+  // Function to get user location
+  // Using expo-location
+  const getUserLocation = async () => {
+    let { status } = await requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'Permission to access location was denied');
+      return;
+    }
+
+    try {
+      let location = await getCurrentPositionAsync();
+      setUserLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      });
+    } catch (error) {
+      console.error('Error getting location:', error);
+      Alert.alert('Error', 'Could not get your current location');
+    }
+  };
+
+  // Ask for location permission on map modal open
+  useEffect(() => {
+    getUserLocation();
+  }, [isMapModalVisible]);
+
+  const onMapPress = (e: any) => {
+    setTaskMarker({ coordinate: e.nativeEvent.coordinate });
+    console.log(taskMarker);
+  }
 
   // Fetch task lists from Firestore
   useEffect(() => {
     try {
       setListsLoading(true);
-      fetchTaskLists(setTaskLists, selectedListId, setSelectedListId);  
+      fetchTaskLists(setTaskLists, selectedListId, setSelectedListId);
     } catch (err) {
       console.error("Error fetching task lists:", err);
     } finally {
       setListsLoading(false);
     }
-
   }, []);
 
   // Fetch tasks from Firestore, filtered by selected list
@@ -64,9 +124,7 @@ export default function TasksScreen() {
     } finally {
       setLoading(false);
     }
-
   }, [selectedListId]);
-
 
   // Toggle task completion status
   const toggleTaskCompletion = async (
@@ -237,61 +295,156 @@ export default function TasksScreen() {
     );
   };
 
+  const showMapModal = () => {
+    return (
+      <Modal
+        visible={isMapModalVisible}
+        animationType="slide"
+        onRequestClose={() => setIsMapModalVisible(false)}
+        presentationStyle="fullScreen"
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              onPress={() => setIsMapModalVisible(false)}
+              style={styles.closeButton}
+            >
+              <Feather name="x" size={24} color="#333" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Select Location</Text>
+          </View>
+          <View style={styles.mapContainer}>
+            <MapView
+              style={styles.map}
+              initialRegion={userLocation}
+              showsUserLocation={true}
+              followsUserLocation={true}
+              showsMyLocationButton={true}
+              showsScale={true}
+              showsBuildings={true}
+              showsPointsOfInterest={true}
+              onPress={onMapPress}
+            >
+            {taskMarker && (
+              <Marker
+                coordinate={taskMarker.coordinate}
+              />
+            )}
+            </MapView>
+          </View>
+        </SafeAreaView>
+      </Modal>
+    );
+  };
+
   // Render each task item
   const renderTask = ({ item }: { item: dbTask }) => {
     const isEditing = item.id === editingTaskId;
 
+    // Define menu actions
+    const menuActions = [
+      {
+        title: "Edit",
+        systemIcon: Platform.OS === "ios" ? "square.and.pencil" : undefined,
+        // For Android, we can provide action IDs that match drawable resource names
+        // or use a more generic approach
+        id: Platform.OS === "android" ? "edit" : undefined,
+        destructive: false,
+      },
+      {
+        title: "Set Location",
+        systemIcon: Platform.OS === "ios" ? "location" : undefined,
+        id: Platform.OS === "android" ? "set_location" : undefined,
+        destructive: false,
+      },
+      {
+        title: "Delete",
+        systemIcon: Platform.OS === "ios" ? "trash" : undefined,
+        id: Platform.OS === "android" ? "delete" : undefined,
+        destructive: true,
+      },
+    ];
+
     return (
-      <TouchableOpacity
-        style={styles.taskItem}
-        onPress={() => {
-          if (!isEditing) {
-            toggleTaskCompletion(item.id, item.completed);
+      <ContextMenu
+        actions={menuActions}
+        onPress={(e) => {
+          // Handle menu action selection
+          if (e.nativeEvent.index === 0) {
+            // Edit action
+            setEditingTaskId(item.id);
+            setEditingTaskText(item.title);
+          } else if (e.nativeEvent.index === 1) {
+            // Set Location action
+            setIsMapModalVisible(true);
+          } else if (e.nativeEvent.index === 2) {
+            // Delete action
+            Alert.alert(
+              "Delete Task",
+              "Are you sure you want to delete this task?",
+              [
+                {
+                  text: "Cancel",
+                  style: "cancel",
+                },
+                {
+                  text: "Delete",
+                  onPress: () => deleteTask(item.id),
+                  style: "destructive",
+                },
+              ]
+            );
           }
         }}
-        onLongPress={() => {
-          setEditingTaskId(item.id);
-          setEditingTaskText(item.title);
-        }}
+        previewBackgroundColor="#f9f9f9"
       >
-        <View style={styles.taskContent}>
-          <View style={styles.taskHeader}>
-            {!isEditing && (
-              <TouchableOpacity
-                style={styles.checkboxContainer}
-                onPress={() => toggleTaskCompletion(item.id, item.completed)}
-              >
-                {item.completed ? (
-                  <Feather name="check-square" size={24} color="#3498db" />
-                ) : (
-                  <Feather name="square" size={24} color="#3498db" />
-                )}
-              </TouchableOpacity>
-            )}
+        <TouchableOpacity
+          style={styles.taskItem}
+          onPress={() => {
+            if (!isEditing) {
+              toggleTaskCompletion(item.id, item.completed);
+            }
+          }}
+        >
+          <View style={styles.taskContent}>
+            <View style={styles.taskHeader}>
+              {!isEditing && (
+                <TouchableOpacity
+                  style={styles.checkboxContainer}
+                  onPress={() => toggleTaskCompletion(item.id, item.completed)}
+                >
+                  {item.completed ? (
+                    <Feather name="check-square" size={24} color="#3498db" />
+                  ) : (
+                    <Feather name="square" size={24} color="#3498db" />
+                  )}
+                </TouchableOpacity>
+              )}
 
-            {isEditing ? (
-              <TextInput
-                style={styles.taskTitleInput}
-                value={editingTaskText}
-                onChangeText={setEditingTaskText}
-                placeholder="Enter task name..."
-                autoFocus
-                onBlur={() => saveTaskTitle(item.id)}
-                onSubmitEditing={() => saveTaskTitle(item.id)}
-              />
-            ) : (
-              <Text
-                style={[
-                  styles.taskTitle,
-                  item.completed && styles.completedTaskText,
-                ]}
-              >
-                {item.title}
-              </Text>
-            )}
+              {isEditing ? (
+                <TextInput
+                  style={styles.taskTitleInput}
+                  value={editingTaskText}
+                  onChangeText={setEditingTaskText}
+                  placeholder="Enter task name..."
+                  autoFocus
+                  onBlur={() => saveTaskTitle(item.id)}
+                  onSubmitEditing={() => saveTaskTitle(item.id)}
+                />
+              ) : (
+                <Text
+                  style={[
+                    styles.taskTitle,
+                    item.completed && styles.completedTaskText,
+                  ]}
+                >
+                  {item.title}
+                </Text>
+              )}
+            </View>
           </View>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </ContextMenu>
     );
   };
 
@@ -341,64 +494,67 @@ export default function TasksScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      {/* Task Lists Horizontal Scroll */}
-      <HorizontalListScroll
-        taskLists={taskLists}
-        renderListItem={renderListItem}
-        setIsNewListModalVisible={setIsNewListModalVisible}
-      />
-     
-      {/* Loading state for tasks */}
-      {loading ? (
-        <View style={styles.tasksLoadingContainer}>
-          <ActivityIndicator size="large" color="#3498db" />
-          <Text style={styles.loadingText}>Loading tasks...</Text>
-        </View>
-      ) : error ? (
-        // Error state
-        <View style={styles.centeredContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={() => {
-              setError(null);
-              setLoading(true);
-              // Re-trigger useEffect
-              setTasks([]);
-            }}
-          >
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      ) : tasks.length === 0 ? (
-        // Empty tasks state
-        <View style={styles.centeredContainer}>
-          <Feather name="clipboard" size={64} color="#ccc" />
-          <Text style={styles.emptyStateText}>No tasks yet</Text>
-          <Text style={styles.emptyStateSubText}>
-            Your tasks will appear here when you create them
-          </Text>
-          <TouchableOpacity
-            style={styles.createTaskButton}
-            onPress={createNewTask}
-          >
-            <Text style={styles.createListButtonText}>Create Task</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        // Task list
-        <TaskList
-          tasks={tasks}
-          editingTaskId={editingTaskId}
-          saveTaskTitle={saveTaskTitle}
-          createNewTask={createNewTask}
-          renderTask={renderTask}
+    <MenuProvider>
+      <View style={styles.container}>
+        {/* Task Lists Horizontal Scroll */}
+        <HorizontalListScroll
+          taskLists={taskLists}
+          renderListItem={renderListItem}
+          setIsNewListModalVisible={setIsNewListModalVisible}
         />
-      )}
 
-      {renderNewListModal()}
-    </View>
+        {/* Loading state for tasks */}
+        {loading ? (
+          <View style={styles.tasksLoadingContainer}>
+            <ActivityIndicator size="large" color="#3498db" />
+            <Text style={styles.loadingText}>Loading tasks...</Text>
+          </View>
+        ) : error ? (
+          // Error state
+          <View style={styles.centeredContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={() => {
+                setError(null);
+                setLoading(true);
+                // Re-trigger useEffect
+                setTasks([]);
+              }}
+            >
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : tasks.length === 0 ? (
+          // Empty tasks state
+          <View style={styles.centeredContainer}>
+            <Feather name="clipboard" size={64} color="#ccc" />
+            <Text style={styles.emptyStateText}>No tasks yet</Text>
+            <Text style={styles.emptyStateSubText}>
+              Your tasks will appear here when you create them
+            </Text>
+            <TouchableOpacity
+              style={styles.createTaskButton}
+              onPress={createNewTask}
+            >
+              <Text style={styles.createListButtonText}>Create Task</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          // Task list
+          <TaskList
+            tasks={tasks}
+            editingTaskId={editingTaskId}
+            saveTaskTitle={saveTaskTitle}
+            createNewTask={createNewTask}
+            renderTask={renderTask}
+          />
+        )}
+
+        {renderNewListModal()}
+        {showMapModal()}
+      </View>
+    </MenuProvider>
   );
 }
 
@@ -441,48 +597,6 @@ const styles = StyleSheet.create({
   },
   selectedListItemText: {
     fontWeight: "700",
-  },
-  taskItem: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  taskContent: {
-    flex: 1,
-  },
-  taskHeader: {
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  taskTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
-    flex: 1,
-    marginLeft: 12,
-  },
-  taskTitleInput: {
-    fontSize: 18,
-    flex: 1,
-    marginLeft: 12,
-    padding: 0,
-    borderBottomWidth: 1,
-    borderBottomColor: "#3498db",
-  },
-  completedTaskText: {
-    textDecorationLine: "line-through",
-    color: "#aaa",
-  },
-  checkboxContainer: {
-    marginRight: 0,
   },
   errorText: {
     color: "#e74c3c",
@@ -535,5 +649,75 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
+  },
+
+  taskItem: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  taskContent: {
+    flex: 1,
+  },
+  taskHeader: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  taskTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+    flex: 1,
+    marginLeft: 12,
+  },
+  taskTitleInput: {
+    fontSize: 18,
+    flex: 1,
+    marginLeft: 12,
+    padding: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: "#3498db",
+  },
+  completedTaskText: {
+    textDecorationLine: "line-through",
+    color: "#aaa",
+  },
+  checkboxContainer: {
+    marginRight: 0,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  closeButton: {
+    padding: 8,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginLeft: 16,
+  },
+  mapContainer: {
+    flex: 1,
+    overflow: "hidden",
+  },
+  map: {
+    width: "100%",
+    height: "100%",
   },
 });

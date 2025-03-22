@@ -1,4 +1,5 @@
 {
+  "owner": "fjeldberg",
   "expo": {
     "name": "TaskMinder",
     "slug": "TaskMinder",
@@ -8,8 +9,14 @@
     "scheme": "taskminder",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "jsEngine": "hermes",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundler": "metro",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "This app needs access to location to show your position on the map.",
+        "NSLocationAlwaysUsageDescription": "This app needs access to location to show your position on the map."
+      }
     },
     "android": {
       "adaptiveIcon": {
