@@ -1,50 +1,61 @@
-# Welcome to your Expo app 👋
+# TaskMinder
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A simple task management app built with React Native and Firebase.
 
-## Get started
+## Features
 
-1. Install dependencies
+- Create and manage multiple task lists
+- Add, edit, and delete tasks
+- Mark tasks as complete
+- Add location data to tasks using interactive maps
+- Real-time data synchronization with Firebase
 
-   ```bash
-   npm install
-   ```
+## Technologies Used
 
-2. Start the app
+- React Native / Expo
+- Firebase Firestore
+- React Native Maps
+- Expo Location
 
-   ```bash
-    npx expo start
-   ```
+## Getting Started
 
-In the output, you'll find options to open the app in a
+### Prerequisites
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- Node.js
+- npm or yarn
+- Expo CLI
+- Firebase account
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### Installation
 
-## Get a fresh project
-
-When you're ready, run:
+1. Clone the repository
 
 ```bash
-npm run reset-project
+git clone https://github.com/yourusername/TaskMinder.git
+cd TaskMinder
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Install dependencies
 
-## Learn more
+```bash
+npm install
+# or
+yarn install
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+3. Start the development server
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+npx expo start
+```
 
-## Join the community
+## Project Structure
 
-Join our community of developers creating universal apps.
+- `app/` - Main application screens
+- `components/` - Reusable UI components
+- `database/` - Firebase configuration and API functions
+- `types/` - TypeScript type definitions
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## License
+
+This project is licensed under the MIT License.
