@@ -48,8 +48,10 @@ type MapModalProps = {
     latitudeDelta: number;
     longitudeDelta: number;
   };
-  taskMarker: TaskMarker | null;
-  setTaskMarker: (marker: TaskMarker | null) => void;
+  taskLocation: {
+    latitude: number;
+    longitude: number;
+  } | null | undefined;
   onLocationSelect: (marker: TaskMarker) => void;
 }
 

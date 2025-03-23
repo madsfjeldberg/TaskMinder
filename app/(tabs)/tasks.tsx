@@ -45,7 +45,6 @@ export default function TasksScreen() {
   const [isNewListModalVisible, setIsNewListModalVisible] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
-  const [taskMarker, setTaskMarker] = useState<TaskMarker | null>(null);
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -315,20 +314,19 @@ const updateTaskLocation = async (taskId: string, marker: TaskMarker) => {
 
 
   const showMapModal = () => {
+    const selectedTaskLocation = tasks.find((task) => task.id === mapEditingTaskId)?.location;
+
     return (
       <MapModal
         isMapModalVisible={isMapModalVisible}
         setIsMapModalVisible={(visible) => {
           if (!visible) {
-            // Reset states when closing the modal
-            setTaskMarker(null);
             setMapEditingTaskId(null);
           }
           setIsMapModalVisible(visible);
         }}
         userLocation={userLocation}
-        taskMarker={taskMarker}
-        setTaskMarker={setTaskMarker}
+        taskLocation={selectedTaskLocation}
         onLocationSelect={(marker) => {
           if (mapEditingTaskId) {
             updateTaskLocation(mapEditingTaskId, marker);
@@ -378,16 +376,6 @@ const updateTaskLocation = async (taskId: string, marker: TaskMarker) => {
           } else if (e.nativeEvent.index === 1) {
             // Set Location action
             setMapEditingTaskId(item.id);
-
-            if (item.location) {
-              console.log("item.location", item.location);
-              setTaskMarker({
-                coordinate: {
-                  latitude: item.location.latitude,
-                  longitude: item.location.longitude,
-                },
-              });
-            }
             setIsMapModalVisible(true);
           } else if (e.nativeEvent.index === 2) {
             // Delete action

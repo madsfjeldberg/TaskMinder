@@ -1,18 +1,18 @@
 import React from "react";
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Modal, View, Text, TouchableOpacity, StyleSheet, StatusBar, Platform } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { MapModalProps } from "@/types/types";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 
 export default function MapModal({
   isMapModalVisible,
   setIsMapModalVisible,
   userLocation,
-  taskMarker,
-  setTaskMarker,
+  taskLocation,
   onLocationSelect,
 }: MapModalProps) {
+  const insets = useSafeAreaInsets();
 
   // Handles changing task location
   const onMapPress = (e: any) => {
@@ -20,7 +20,6 @@ export default function MapModal({
   const newMarker = {
     coordinate: { latitude, longitude },
   };
-  setTaskMarker(newMarker);
   onLocationSelect?.(newMarker);
 };
 
@@ -31,7 +30,11 @@ export default function MapModal({
       onRequestClose={() => setIsMapModalVisible(false)}
       presentationStyle="fullScreen"
     >
-      <SafeAreaView style={styles.modalContainer} edges={['top']}>
+      <View style={[
+        styles.container,
+        { paddingTop: Platform.OS === 'ios' ? insets.top : StatusBar.currentHeight }
+      ]}>
+      <StatusBar barStyle="dark-content" />
         <View style={styles.modalHeader}>
           <TouchableOpacity
             onPress={() => setIsMapModalVisible(false)}
@@ -54,27 +57,27 @@ export default function MapModal({
             onPress={onMapPress}
           >
             {/* Show the task marker if it exists */}
-            {taskMarker && (
+            {taskLocation && (
               <Marker
-                coordinate={taskMarker.coordinate}
+                coordinate={taskLocation}
               />
             )}
           </MapView>
         </View>
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  modalContainer: {
+  container: {
     flex: 1,
     backgroundColor: "#fff",
   },
   modalHeader: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 10,
+    padding: 16,
   },
   closeButton: {
     padding: 8,
