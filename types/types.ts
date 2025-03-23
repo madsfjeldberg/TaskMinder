@@ -21,6 +21,8 @@ type HorizontalScrollListProps = {
   taskLists: dbTaskList[];
   renderListItem: (list: dbTaskList) => React.ReactNode;
   setIsNewListModalVisible: (visible: boolean) => void;
+  onRenameList: (list: dbTaskList) => void;
+  onDeleteList: (listId: string) => void;
 }
 
 type TaskListProps = {

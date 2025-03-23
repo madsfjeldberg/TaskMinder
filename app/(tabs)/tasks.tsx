@@ -290,6 +290,82 @@ export default function TasksScreen() {
     }
   };
 
+  // Delete a task list
+const deleteList = async (listId: string) => {
+  try {
+    // Remove from Firestore
+    const listRef = doc(db, "task_lists", listId);
+    await deleteDoc(listRef);
+
+    // Remove from local state
+    setTaskLists((prevLists) => prevLists.filter((list) => list.id !== listId));
+
+    // If the deleted list was selected, select another list
+    if (selectedListId === listId) {
+      const newSelectedList = taskLists.find(list => list.id !== listId);
+      setSelectedListId(newSelectedList ? newSelectedList.id : null);
+    }
+  } catch (err) {
+    console.error("Error deleting task list:", err);
+    Alert.alert("Error", "Could not delete task list. Please try again.");
+  }
+};
+
+// Set up for renaming a list
+const [renamingList, setRenamingList] = useState<dbTaskList | null>(null);
+const [newName, setNewName] = useState("");
+
+// Show rename dialog
+const handleRenameList = (list: dbTaskList) => {
+  // Store the specific list ID we want to rename
+  const listIdToRename = list.id;
+  const currentListName = list.name;
+  
+  Alert.prompt(
+    "Rename List",
+    "Enter a new name for the list:",
+    [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Rename",
+        onPress: (value) => {
+          if (value && value.trim()) {
+            // Pass the specific list ID to ensure we rename the right list
+            renameTaskList(listIdToRename, value.trim());
+          }
+        },
+      },
+    ],
+    "plain-text",
+    currentListName
+  );
+};
+
+// Rename a task list
+const renameTaskList = async (listId: string, newName: string) => {
+  try {
+    console.log(`Renaming list ${listId} to "${newName}"`);
+    
+    const listRef = doc(db, "task_lists", listId);
+    await updateDoc(listRef, {
+      name: newName,
+    });
+
+    // Update local state with the specific list ID
+    setTaskLists((prevLists) =>
+      prevLists.map((list) =>
+        list.id === listId ? { ...list, name: newName } : list
+      )
+    );
+  } catch (err) {
+    console.error("Error renaming task list:", err);
+    Alert.alert("Error", "Could not rename task list. Please try again.");
+  }
+};
+
   // Render task list item
   const renderListItem = (list: dbTaskList) => {
     const isSelected = selectedListId === list.id;
@@ -505,6 +581,8 @@ export default function TasksScreen() {
           taskLists={taskLists}
           renderListItem={renderListItem}
           setIsNewListModalVisible={setIsNewListModalVisible}
+          onRenameList={handleRenameList}
+          onDeleteList={deleteList}
         />
 
         {/* Loading state for tasks */}
