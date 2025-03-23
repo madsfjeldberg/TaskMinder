@@ -1,25 +1,29 @@
 import { ListRenderItem } from "react-native";
 
-interface dbTask {
+type dbTask = {
   id: string;
   title: string;
   completed: boolean;
+  location: {
+    latitude: number;
+    longitude: number;
+  } | null;
 }
 
 // List interface
-interface dbTaskList {
+type dbTaskList = {
   id: string;
   name: string;
   createdAt: Date;
 }
 
-interface HorizontalScrollListProps {
+type HorizontalScrollListProps = {
   taskLists: dbTaskList[];
   renderListItem: (list: dbTaskList) => React.ReactNode;
   setIsNewListModalVisible: (visible: boolean) => void;
 }
 
-interface TaskListProps {
+type TaskListProps = {
   tasks: dbTask[];
   editingTaskId: string | null;
   saveTaskTitle: (id: string) => void;
@@ -27,7 +31,7 @@ interface TaskListProps {
   renderTask: ListRenderItem<dbTask>;
 }
 
-interface NewListModalProps {
+type NewListModalProps = {
   isVisible: boolean;
   onClose: () => void;
   onCreateList: () => void;
@@ -35,10 +39,33 @@ interface NewListModalProps {
   setNewListName: (name: string) => void;
 }
 
+type MapModalProps = {
+  isMapModalVisible: boolean;
+  setIsMapModalVisible: (visible: boolean) => void;
+  userLocation: {
+    latitude: number;
+    longitude: number;
+    latitudeDelta: number;
+    longitudeDelta: number;
+  };
+  taskMarker: TaskMarker | null;
+  setTaskMarker: (marker: TaskMarker | null) => void;
+  onLocationSelect: (marker: TaskMarker) => void;
+}
+
+type TaskMarker = {
+  coordinate: {
+    latitude: number;
+    longitude: number;
+  };
+};
+
 export type {
   dbTask,
   dbTaskList,
   TaskListProps,
   HorizontalScrollListProps,
   NewListModalProps,
+  MapModalProps,
+  TaskMarker,
 };

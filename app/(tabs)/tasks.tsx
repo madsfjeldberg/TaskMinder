@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,14 +8,9 @@ import {
   TextInput,
   Alert,
   Platform,
-  Modal,
-  SafeAreaView,
 } from "react-native";
 import {
   collection,
-  getDocs,
-  query,
-  where,
   doc,
   updateDoc,
   addDoc,
@@ -25,21 +20,16 @@ import {
 import { db } from "../../database/firebase";
 import { Feather } from "@expo/vector-icons";
 import TaskList from "@/components/custom/TaskList";
-import { dbTask, dbTaskList } from "@/types/types";
+import { dbTask, dbTaskList, TaskMarker } from "@/types/types";
 import HorizontalListScroll from "@/components/custom/HorizontalScrollList";
 import NewListModal from "@/components/custom/NewListModal";
 import { fetchTaskLists, fetchTasks } from "@/database/api";
 import { MenuProvider } from "react-native-popup-menu";
 import ContextMenu from "react-native-context-menu-view";
-import MapView, { Marker } from "react-native-maps";
 import { requestForegroundPermissionsAsync, getCurrentPositionAsync } from "expo-location";
+import MapModal from "@/components/custom/MapModal";
 
-type TaskMarker = {
-  coordinate: {
-    latitude: number;
-    longitude: number;
-  };
-};
+
 
 
 export default function TasksScreen() {
@@ -50,6 +40,7 @@ export default function TasksScreen() {
   const [listsLoading, setListsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [mapEditingTaskId, setMapEditingTaskId] = useState<string | null>(null);
   const [editingTaskText, setEditingTaskText] = useState("");
   const [isNewListModalVisible, setIsNewListModalVisible] = useState(false);
   const [newListName, setNewListName] = useState("");
@@ -67,6 +58,35 @@ export default function TasksScreen() {
     latitudeDelta: 0.2,
     longitudeDelta: 0.2,
   });
+
+  // Ask for location permission on map modal open
+  useEffect(() => {
+    getUserLocation();
+  }, [isMapModalVisible]);
+
+  // Fetch task lists from Firestore
+  useEffect(() => {
+    try {
+      setListsLoading(true);
+      fetchTaskLists(setTaskLists, selectedListId, setSelectedListId);
+    } catch (err) {
+      console.error("Error fetching task lists:", err);
+    } finally {
+      setListsLoading(false);
+    }
+  }, []);
+
+  // Fetch tasks from Firestore, filtered by selected list
+  useEffect(() => {
+    try {
+      setLoading(true);
+      fetchTasks(setTasks, selectedListId, setError);
+    } catch (err) {
+      console.error("Error fetching tasks:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedListId]);
   
 
   // Function to get user location
@@ -92,40 +112,6 @@ export default function TasksScreen() {
     }
   };
 
-  // Ask for location permission on map modal open
-  useEffect(() => {
-    getUserLocation();
-  }, [isMapModalVisible]);
-
-  const onMapPress = (e: any) => {
-    setTaskMarker({ coordinate: e.nativeEvent.coordinate });
-    console.log(taskMarker);
-  }
-
-  // Fetch task lists from Firestore
-  useEffect(() => {
-    try {
-      setListsLoading(true);
-      fetchTaskLists(setTaskLists, selectedListId, setSelectedListId);
-    } catch (err) {
-      console.error("Error fetching task lists:", err);
-    } finally {
-      setListsLoading(false);
-    }
-  }, []);
-
-  // Fetch tasks from Firestore, filtered by selected list
-  useEffect(() => {
-    try {
-      setLoading(true);
-      fetchTasks(setTasks, selectedListId, setError);
-    } catch (err) {
-      console.error("Error fetching tasks:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedListId]);
-
   // Toggle task completion status
   const toggleTaskCompletion = async (
     taskId: string,
@@ -149,6 +135,40 @@ export default function TasksScreen() {
       Alert.alert("Error", "Could not update task. Please try again.");
     }
   };
+
+  // Add this function to update task location
+const updateTaskLocation = async (taskId: string, marker: TaskMarker) => {
+  try {
+    const taskRef = doc(db, "tasks", taskId);
+    await updateDoc(taskRef, {
+      location: {
+        latitude: marker.coordinate.latitude,
+        longitude: marker.coordinate.longitude,
+      }
+    });
+
+    // Update local state
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === taskId 
+          ? { 
+              ...task, 
+              location: {
+                latitude: marker.coordinate.latitude,
+                longitude: marker.coordinate.longitude,
+              }
+            } 
+          : task
+      )
+    );
+    
+    // Show success message
+    Alert.alert("Success", "Location updated successfully");
+  } catch (err) {
+    console.error("Error updating task location:", err);
+    Alert.alert("Error", "Could not update task location. Please try again.");
+  }
+};
 
   // Create a new task list
   const createNewTaskList = async () => {
@@ -183,10 +203,6 @@ export default function TasksScreen() {
 
   // Create a new task
   const createNewTask = async () => {
-    if (!selectedListId) {
-      Alert.alert("Error", "Please select a list first");
-      return;
-    }
 
     try {
       // Create an empty task
@@ -195,6 +211,7 @@ export default function TasksScreen() {
         completed: false,
         createdAt: serverTimestamp(),
         listId: selectedListId,
+        location: null,
       };
 
       // Add new task to Firestore
@@ -205,6 +222,7 @@ export default function TasksScreen() {
         id: docRef.id,
         title: newTask.title,
         completed: newTask.completed,
+        location: null,
       };
 
       setTasks((prev) => [taskWithId, ...prev]);
@@ -295,45 +313,28 @@ export default function TasksScreen() {
     );
   };
 
+
   const showMapModal = () => {
     return (
-      <Modal
-        visible={isMapModalVisible}
-        animationType="slide"
-        onRequestClose={() => setIsMapModalVisible(false)}
-        presentationStyle="fullScreen"
-      >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity
-              onPress={() => setIsMapModalVisible(false)}
-              style={styles.closeButton}
-            >
-              <Feather name="x" size={24} color="#333" />
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>Select Location</Text>
-          </View>
-          <View style={styles.mapContainer}>
-            <MapView
-              style={styles.map}
-              initialRegion={userLocation}
-              showsUserLocation={true}
-              followsUserLocation={true}
-              showsMyLocationButton={true}
-              showsScale={true}
-              showsBuildings={true}
-              showsPointsOfInterest={true}
-              onPress={onMapPress}
-            >
-            {taskMarker && (
-              <Marker
-                coordinate={taskMarker.coordinate}
-              />
-            )}
-            </MapView>
-          </View>
-        </SafeAreaView>
-      </Modal>
+      <MapModal
+        isMapModalVisible={isMapModalVisible}
+        setIsMapModalVisible={(visible) => {
+          if (!visible) {
+            // Reset states when closing the modal
+            setTaskMarker(null);
+            setMapEditingTaskId(null);
+          }
+          setIsMapModalVisible(visible);
+        }}
+        userLocation={userLocation}
+        taskMarker={taskMarker}
+        setTaskMarker={setTaskMarker}
+        onLocationSelect={(marker) => {
+          if (mapEditingTaskId) {
+            updateTaskLocation(mapEditingTaskId, marker);
+          }
+        }}
+      />
     );
   };
 
@@ -376,6 +377,17 @@ export default function TasksScreen() {
             setEditingTaskText(item.title);
           } else if (e.nativeEvent.index === 1) {
             // Set Location action
+            setMapEditingTaskId(item.id);
+
+            if (item.location) {
+              console.log("item.location", item.location);
+              setTaskMarker({
+                coordinate: {
+                  latitude: item.location.latitude,
+                  longitude: item.location.longitude,
+                },
+              });
+            }
             setIsMapModalVisible(true);
           } else if (e.nativeEvent.index === 2) {
             // Delete action
@@ -493,6 +505,7 @@ export default function TasksScreen() {
     );
   }
 
+  {/* MAIN RENDER */}
   return (
     <MenuProvider>
       <View style={styles.container}>

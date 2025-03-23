@@ -66,6 +66,7 @@ export const fetchTasks = async (
         id: doc.id,
         title: data.title,
         completed: data.completed || false,
+        location: data.location || null,
       };
     });
 
