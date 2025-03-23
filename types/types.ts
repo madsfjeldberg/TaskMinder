@@ -45,12 +45,7 @@ type NewListModalProps = {
 type MapModalProps = {
   isMapModalVisible: boolean;
   setIsMapModalVisible: (visible: boolean) => void;
-  userLocation: {
-    latitude: number;
-    longitude: number;
-    latitudeDelta: number;
-    longitudeDelta: number;
-  };
+  userLocation: UserLocation;
   taskLocation: {
     latitude: number;
     longitude: number;
@@ -65,6 +60,13 @@ type TaskMarker = {
   };
 };
 
+type UserLocation = {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+}
+
 export type {
   dbTask,
   dbTaskList,
@@ -73,4 +75,5 @@ export type {
   NewListModalProps,
   MapModalProps,
   TaskMarker,
+  UserLocation,
 };

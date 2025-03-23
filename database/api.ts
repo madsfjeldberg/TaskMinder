@@ -101,7 +101,10 @@ export const updateTaskLocation = async (taskId: string, marker: TaskMarker) => 
     async () => {
       const taskRef = doc(db, "tasks", taskId);
       await updateDoc(taskRef, {
-        location: marker,
+        location: {
+          latitude: marker.coordinate.latitude,
+          longitude: marker.coordinate.longitude,
+        },
       });
     },
     "Error updating task location:"

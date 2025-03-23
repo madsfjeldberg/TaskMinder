@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Modal, View, Text, TouchableOpacity, StyleSheet, StatusBar, Platform } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { MapModalProps } from "@/types/types";
@@ -14,12 +14,23 @@ export default function MapModal({
 }: MapModalProps) {
   const insets = useSafeAreaInsets();
 
+  // State for current marker
+  const [currentMarker, setCurrentMarker] = useState(taskLocation);
+
+  // Update current marker when task location changes
+  useEffect(() => {
+    setCurrentMarker(taskLocation);
+  }, [taskLocation]);
+
   // Handles changing task location
   const onMapPress = (e: any) => {
-    console.log("onMapPress", e)
     const { latitude, longitude } = e.nativeEvent.coordinate;
+    const newLocation = { latitude, longitude };
+
+    setCurrentMarker(newLocation);
+
     const newMarker = {
-      coordinate: { latitude, longitude },
+      coordinate: newLocation,
     };
     onLocationSelect?.(newMarker);
   };
@@ -58,9 +69,13 @@ export default function MapModal({
             onPress={onMapPress}
           >
             {/* Show the task marker if it exists */}
-            {taskLocation && (
+            {currentMarker && (
               <Marker
-                coordinate={taskLocation}
+                key={currentMarker.latitude}
+                coordinate={{
+                  latitude: currentMarker.latitude,
+                  longitude: currentMarker.longitude,
+                }}
               />
             )}
           </MapView>

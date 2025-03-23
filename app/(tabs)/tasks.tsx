@@ -20,7 +20,7 @@ import {
 import { db } from "../../database/firebase";
 import { Feather } from "@expo/vector-icons";
 import TaskList from "@/components/custom/TaskList";
-import { dbTask, dbTaskList, TaskMarker } from "@/types/types";
+import { dbTask, dbTaskList, TaskMarker, UserLocation } from "@/types/types";
 import HorizontalListScroll from "@/components/custom/HorizontalScrollList";
 import NewListModal from "@/components/custom/NewListModal";
 import * as api from "@/database/api";
@@ -41,22 +41,12 @@ export default function TasksScreen() {
   const [isNewListModalVisible, setIsNewListModalVisible] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
-  const [userLocation, setUserLocation] = useState<{
-    latitude: number;
-    longitude: number;
-    latitudeDelta: number;
-    longitudeDelta: number;
-  }>({
-    // copenhagen
+  const [userLocation, setUserLocation] = useState<UserLocation>({
     latitude: 55.676098,
     longitude: 12.568337,
     latitudeDelta: 0.2,
     longitudeDelta: 0.2,
   });
-
-
-  // NEW BETTER STATES:
-
   const [editing, setEditing] = useState<{
     taskId: string | null;
     text: string;
@@ -64,7 +54,7 @@ export default function TasksScreen() {
     taskId: null,
     text: "",
   });
-
+  
   // watch for changes in selectedTask
   useEffect(() => {
     if (selectedTask?.id) {
@@ -166,7 +156,9 @@ export default function TasksScreen() {
     // Updates location of marker in map modal
     setSelectedTask((prev) =>
       prev && prev.id === taskId
-        ? { ...prev, location: newLocation }
+        ? {
+          ...prev, location: newLocation
+        }
         : prev
     );
   };
@@ -321,12 +313,16 @@ export default function TasksScreen() {
   };
 
   const showMapModal = () => {
+    if (!selectedTask) {
+      return null;
+    }
+    
     return (
       <MapModal
         isMapModalVisible={isMapModalVisible}
         setIsMapModalVisible={setIsMapModalVisible}
         userLocation={userLocation}
-        taskLocation={selectedTask?.location || null}
+        taskLocation={selectedTask?.location}
         onLocationSelect={(marker) => {
           if (selectedTask?.id) {
             updateTaskLocation(selectedTask.id, marker);
@@ -700,32 +696,5 @@ const styles = StyleSheet.create({
   },
   checkboxContainer: {
     marginRight: 0,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  closeButton: {
-    padding: 8,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginLeft: 16,
-  },
-  mapContainer: {
-    flex: 1,
-    overflow: "hidden",
-  },
-  map: {
-    width: "100%",
-    height: "100%",
-  },
+  }
 });
