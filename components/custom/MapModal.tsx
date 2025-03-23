@@ -16,12 +16,13 @@ export default function MapModal({
 
   // Handles changing task location
   const onMapPress = (e: any) => {
-  const { latitude, longitude } = e.nativeEvent.coordinate;
-  const newMarker = {
-    coordinate: { latitude, longitude },
+    console.log("onMapPress", e)
+    const { latitude, longitude } = e.nativeEvent.coordinate;
+    const newMarker = {
+      coordinate: { latitude, longitude },
+    };
+    onLocationSelect?.(newMarker);
   };
-  onLocationSelect?.(newMarker);
-};
 
   return (
     <Modal

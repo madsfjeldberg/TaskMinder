@@ -8,7 +8,7 @@ import { TaskListProps } from "@/types/types";
 
 export default function TaskList({
   tasks,
-  editingTaskId,
+  editing,
   saveTaskTitle,
   createNewTask,
   renderTask,
@@ -18,8 +18,8 @@ export default function TaskList({
           style={{ flex: 1 }}
           activeOpacity={1}
           onPress={() => {
-            if (editingTaskId) {
-              saveTaskTitle(editingTaskId);
+            if (editing.taskId) {
+              saveTaskTitle(editing.taskId);
             }
           }}
         >
@@ -32,10 +32,10 @@ export default function TaskList({
           <TouchableOpacity
             style={[
               styles.addTaskButton,
-              editingTaskId && styles.addTaskButtonDisabled,
+              editing.taskId && styles.addTaskButtonDisabled,
             ]}
             onPress={createNewTask}
-            disabled={editingTaskId !== null}
+            disabled={editing.taskId !== null}
           >
             <Feather name="plus" size={24} color="#fff" />
           </TouchableOpacity>

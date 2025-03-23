@@ -25,7 +25,10 @@ type HorizontalScrollListProps = {
 
 type TaskListProps = {
   tasks: dbTask[];
-  editingTaskId: string | null;
+  editing: {
+    taskId: string | null;
+    text: string;
+  };
   saveTaskTitle: (id: string) => void;
   createNewTask: () => void;
   renderTask: ListRenderItem<dbTask>;

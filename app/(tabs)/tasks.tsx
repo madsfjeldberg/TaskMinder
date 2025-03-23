@@ -34,14 +34,12 @@ import MapModal from "@/components/custom/MapModal";
 
 export default function TasksScreen() {
   const [tasks, setTasks] = useState<dbTask[]>([]);
+  const [selectedTask, setSelectedTask] = useState<dbTask | null>(null);
   const [taskLists, setTaskLists] = useState<dbTaskList[]>([]);
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [listsLoading, setListsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-  const [mapEditingTaskId, setMapEditingTaskId] = useState<string | null>(null);
-  const [editingTaskText, setEditingTaskText] = useState("");
   const [isNewListModalVisible, setIsNewListModalVisible] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
@@ -57,6 +55,24 @@ export default function TasksScreen() {
     latitudeDelta: 0.2,
     longitudeDelta: 0.2,
   });
+
+
+  // NEW BETTER STATES:
+
+  const [editing, setEditing] = useState<{
+    taskId: string | null;
+    text: string;
+  }>({
+    taskId: null,
+    text: "",
+  });
+
+  // watch for changes in selectedTask
+  useEffect(() => {
+    if (selectedTask?.id) {
+      setIsMapModalVisible(true);
+    }
+  }, [selectedTask]);
 
   // Ask for location permission on map modal open
   useEffect(() => {
@@ -139,11 +155,12 @@ export default function TasksScreen() {
 const updateTaskLocation = async (taskId: string, marker: TaskMarker) => {
   try {
     const taskRef = doc(db, "tasks", taskId);
+    const newLocation = {
+      latitude: marker.coordinate.latitude,
+      longitude: marker.coordinate.longitude,
+    }
     await updateDoc(taskRef, {
-      location: {
-        latitude: marker.coordinate.latitude,
-        longitude: marker.coordinate.longitude,
-      }
+      location: newLocation
     });
 
     // Update local state
@@ -152,17 +169,18 @@ const updateTaskLocation = async (taskId: string, marker: TaskMarker) => {
         task.id === taskId 
           ? { 
               ...task, 
-              location: {
-                latitude: marker.coordinate.latitude,
-                longitude: marker.coordinate.longitude,
-              }
+              location: newLocation
             } 
           : task
       )
     );
+
+    setSelectedTask((prev) =>
+      prev && prev.id === taskId
+        ? { ...prev, location: newLocation }
+        : prev
+    );
     
-    // Show success message
-    Alert.alert("Success", "Location updated successfully");
   } catch (err) {
     console.error("Error updating task location:", err);
     Alert.alert("Error", "Could not update task location. Please try again.");
@@ -227,8 +245,10 @@ const updateTaskLocation = async (taskId: string, marker: TaskMarker) => {
       setTasks((prev) => [taskWithId, ...prev]);
 
       // Set as editing
-      setEditingTaskId(docRef.id);
-      setEditingTaskText("");
+      setEditing({
+        taskId: docRef.id,
+        text: "",
+      });
     } catch (err) {
       console.error("Error creating new task:", err);
       Alert.alert("Error", "Failed to create new task. Please try again.");
@@ -246,9 +266,11 @@ const updateTaskLocation = async (taskId: string, marker: TaskMarker) => {
       setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
 
       // Reset editing state if needed
-      if (editingTaskId === taskId) {
-        setEditingTaskId(null);
-        setEditingTaskText("");
+      if (editing.taskId === taskId) {
+        setEditing({
+          taskId: null,
+          text: "",
+        });
       }
     } catch (err) {
       console.error("Error deleting task:", err);
@@ -258,7 +280,7 @@ const updateTaskLocation = async (taskId: string, marker: TaskMarker) => {
 
   // Save task after editing
   const saveTaskTitle = async (taskId: string) => {
-    if (!editingTaskText.trim()) {
+    if (!editing.text.trim()) {
       // If empty, delete the task
       try {
         await deleteTask(taskId);
@@ -271,19 +293,21 @@ const updateTaskLocation = async (taskId: string, marker: TaskMarker) => {
     try {
       const taskRef = doc(db, "tasks", taskId);
       await updateDoc(taskRef, {
-        title: editingTaskText.trim(),
+        title: editing.text.trim(),
       });
 
       // Update local state
       setTasks((prevTasks) =>
         prevTasks.map((task) =>
-          task.id === taskId ? { ...task, title: editingTaskText.trim() } : task
+          task.id === taskId ? { ...task, title: editing.text.trim() } : task
         )
       );
 
       // Exit editing mode
-      setEditingTaskId(null);
-      setEditingTaskText("");
+      setEditing({
+        taskId: null,
+        text: "",
+      });
     } catch (err) {
       console.error("Error updating task title:", err);
       Alert.alert("Error", "Could not update task. Please try again.");
@@ -314,23 +338,20 @@ const updateTaskLocation = async (taskId: string, marker: TaskMarker) => {
 
 
   const showMapModal = () => {
-    const selectedTaskLocation = tasks.find((task) => task.id === mapEditingTaskId)?.location;
 
     return (
       <MapModal
         isMapModalVisible={isMapModalVisible}
-        setIsMapModalVisible={(visible) => {
-          if (!visible) {
-            setMapEditingTaskId(null);
-          }
-          setIsMapModalVisible(visible);
-        }}
+        setIsMapModalVisible={setIsMapModalVisible}
         userLocation={userLocation}
-        taskLocation={selectedTaskLocation}
+        taskLocation={selectedTask?.location || null}
         onLocationSelect={(marker) => {
-          if (mapEditingTaskId) {
-            updateTaskLocation(mapEditingTaskId, marker);
+          console.log("marker", marker)
+          console.log("editing", editing)
+          if (selectedTask?.id) {
+            updateTaskLocation(selectedTask.id, marker);
           }
+        
         }}
       />
     );
@@ -338,7 +359,7 @@ const updateTaskLocation = async (taskId: string, marker: TaskMarker) => {
 
   // Render each task item
   const renderTask = ({ item }: { item: dbTask }) => {
-    const isEditing = item.id === editingTaskId;
+    const isEditing = item.id === editing.taskId;
 
     // Define menu actions
     const menuActions = [
@@ -371,12 +392,17 @@ const updateTaskLocation = async (taskId: string, marker: TaskMarker) => {
           // Handle menu action selection
           if (e.nativeEvent.index === 0) {
             // Edit action
-            setEditingTaskId(item.id);
-            setEditingTaskText(item.title);
+            setEditing({
+              taskId: item.id,
+              text: item.title,
+            });
           } else if (e.nativeEvent.index === 1) {
             // Set Location action
-            setMapEditingTaskId(item.id);
-            setIsMapModalVisible(true);
+            setSelectedTask(item);
+            setEditing({
+              taskId: item.id,
+              text: item.title,
+            });
           } else if (e.nativeEvent.index === 2) {
             // Delete action
             Alert.alert(
@@ -424,8 +450,8 @@ const updateTaskLocation = async (taskId: string, marker: TaskMarker) => {
               {isEditing ? (
                 <TextInput
                   style={styles.taskTitleInput}
-                  value={editingTaskText}
-                  onChangeText={setEditingTaskText}
+                  value={editing.text}
+                  onChangeText={(text) => setEditing({ ...editing, text })}
                   placeholder="Enter task name..."
                   autoFocus
                   onBlur={() => saveTaskTitle(item.id)}
@@ -545,7 +571,7 @@ const updateTaskLocation = async (taskId: string, marker: TaskMarker) => {
           // Task list
           <TaskList
             tasks={tasks}
-            editingTaskId={editingTaskId}
+            editing={editing}
             saveTaskTitle={saveTaskTitle}
             createNewTask={createNewTask}
             renderTask={renderTask}
