@@ -1,9 +1,19 @@
 import { dbTask, dbTaskList } from "@/types/types";
 import { db } from "./firebase";
-import { query, where } from "firebase/firestore";
+import { doc, query, updateDoc, where } from "firebase/firestore";
 import { collection, getDocs } from "firebase/firestore";
 
-
+const handleFirebaseOperation = async (
+  operation: () => Promise<void>,
+  errorMessage: string
+) => {
+  try {
+    await operation();
+  } catch (err) {
+    console.error(errorMessage, err);
+    throw err;
+  }
+};
 
 
 export const fetchTaskLists = async (
@@ -78,4 +88,16 @@ export const fetchTasks = async (
     console.error("Error fetching tasks:", err);
     setError("Failed to load tasks. Please try again later.");
   }
+};
+
+export const updateTaskCompletion = async (taskId: string, currentStatus: boolean) => {
+  handleFirebaseOperation(
+    async () => {
+      const taskRef = doc(db, "tasks", taskId);
+      await updateDoc(taskRef, {
+        completed: !currentStatus,
+      });
+  },
+  "Error updating task:"
+);
 };

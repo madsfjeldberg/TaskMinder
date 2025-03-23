@@ -23,7 +23,7 @@ import TaskList from "@/components/custom/TaskList";
 import { dbTask, dbTaskList, TaskMarker } from "@/types/types";
 import HorizontalListScroll from "@/components/custom/HorizontalScrollList";
 import NewListModal from "@/components/custom/NewListModal";
-import { fetchTaskLists, fetchTasks } from "@/database/api";
+import { fetchTaskLists, fetchTasks, updateTaskCompletion } from "@/database/api";
 import { MenuProvider } from "react-native-popup-menu";
 import ContextMenu from "react-native-context-menu-view";
 import { requestForegroundPermissionsAsync, getCurrentPositionAsync } from "expo-location";
@@ -127,28 +127,22 @@ export default function TasksScreen() {
     }
   };
 
+
+
   // Toggle task completion status
   const toggleTaskCompletion = async (
     taskId: string,
     currentStatus: boolean
   ) => {
-    try {
-      const taskRef = doc(db, "tasks", taskId);
-      await updateDoc(taskRef, {
-        completed: !currentStatus,
-      });
+    // Update task completion status in Firestore
+    updateTaskCompletion(taskId, currentStatus);
 
-      // Update local state
-      setTasks((prevTasks) =>
-        prevTasks.map((task) =>
-          task.id === taskId ? { ...task, completed: !currentStatus } : task
-        )
-      );
-    } catch (err) {
-      console.error("Error updating task:", err);
-      // Show error message to user
-      Alert.alert("Error", "Could not update task. Please try again.");
-    }
+    // Update local state
+    setTasks((prevTasks) => 
+      prevTasks.map((task) =>
+        task.id === taskId ? { ...task, completed: !currentStatus } : task
+      )
+    );
   };
 
   // Add this function to update task location
