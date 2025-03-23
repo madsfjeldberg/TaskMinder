@@ -23,7 +23,7 @@ import TaskList from "@/components/custom/TaskList";
 import { dbTask, dbTaskList, TaskMarker } from "@/types/types";
 import HorizontalListScroll from "@/components/custom/HorizontalScrollList";
 import NewListModal from "@/components/custom/NewListModal";
-import { fetchTaskLists, fetchTasks, updateTaskCompletion } from "@/database/api";
+import * as api from "@/database/api";
 import { MenuProvider } from "react-native-popup-menu";
 import ContextMenu from "react-native-context-menu-view";
 import { requestForegroundPermissionsAsync, getCurrentPositionAsync } from "expo-location";
@@ -83,7 +83,7 @@ export default function TasksScreen() {
   useEffect(() => {
     try {
       setListsLoading(true);
-      fetchTaskLists(setTaskLists, selectedListId, setSelectedListId);
+      api.fetchTaskLists(setTaskLists, selectedListId, setSelectedListId);
     } catch (err) {
       console.error("Error fetching task lists:", err);
     } finally {
@@ -95,7 +95,7 @@ export default function TasksScreen() {
   useEffect(() => {
     try {
       setLoading(true);
-      fetchTasks(setTasks, selectedListId, setError);
+      api.fetchTasks(setTasks, selectedListId, setError);
     } catch (err) {
       console.error("Error fetching tasks:", err);
     } finally {
@@ -130,12 +130,9 @@ export default function TasksScreen() {
 
 
   // Toggle task completion status
-  const toggleTaskCompletion = async (
-    taskId: string,
-    currentStatus: boolean
-  ) => {
+  const toggleTaskCompletion = async (taskId: string, currentStatus: boolean) => {
     // Update task completion status in Firestore
-    updateTaskCompletion(taskId, currentStatus);
+    api.updateTaskCompletion(taskId, currentStatus);
 
     // Update local state
     setTasks((prevTasks) => 
@@ -145,19 +142,19 @@ export default function TasksScreen() {
     );
   };
 
-  // Add this function to update task location
-const updateTaskLocation = async (taskId: string, marker: TaskMarker) => {
-  try {
-    const taskRef = doc(db, "tasks", taskId);
+  // Toggle task location
+  const updateTaskLocation = async (taskId: string, marker: TaskMarker) => {
+
+    // Update task location in Firestore
+    api.updateTaskLocation(taskId, marker);
+
+    // Get location from marker
     const newLocation = {
       latitude: marker.coordinate.latitude,
-      longitude: marker.coordinate.longitude,
+      longitude: marker.coordinate.longitude
     }
-    await updateDoc(taskRef, {
-      location: newLocation
-    });
 
-    // Update local state
+    // Update local state, with new location
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
         task.id === taskId 
@@ -169,17 +166,14 @@ const updateTaskLocation = async (taskId: string, marker: TaskMarker) => {
       )
     );
 
+    // Update selected task, with new location
+    // Updates location of marker in map modal
     setSelectedTask((prev) =>
       prev && prev.id === taskId
         ? { ...prev, location: newLocation }
         : prev
     );
-    
-  } catch (err) {
-    console.error("Error updating task location:", err);
-    Alert.alert("Error", "Could not update task location. Please try again.");
-  }
-};
+  };
 
   // Create a new task list
   const createNewTaskList = async () => {

@@ -1,4 +1,4 @@
-import { dbTask, dbTaskList } from "@/types/types";
+import { dbTask, dbTaskList, TaskMarker } from "@/types/types";
 import { db } from "./firebase";
 import { doc, query, updateDoc, where } from "firebase/firestore";
 import { collection, getDocs } from "firebase/firestore";
@@ -101,3 +101,16 @@ export const updateTaskCompletion = async (taskId: string, currentStatus: boolea
   "Error updating task:"
 );
 };
+
+export const updateTaskLocation = async (taskId: string, marker: TaskMarker) => {
+  handleFirebaseOperation(
+    async () => {
+      const taskRef = doc(db, "tasks", taskId);
+      await updateDoc(taskRef, {
+        location: marker,
+      });
+    },
+    "Error updating task location:"
+  );
+};
+
