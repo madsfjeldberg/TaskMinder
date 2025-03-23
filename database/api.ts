@@ -21,73 +21,67 @@ export const fetchTaskLists = async (
   selectedListId: string | null,
   setSelectedListId: (id: string | null) => void
 ) => {
-  try {
-    console.log("Fetching task lists...");
+  handleFirebaseOperation(
+    async () => {
 
-    // Create a query against the taskLists collection
-    const listQuery = query(collection(db, "task_lists"));
+      // Create a query against the taskLists collection
+      const listQuery = query(collection(db, "task_lists"));
 
-    // Execute the query
-    const querySnapshot = await getDocs(listQuery);
-    console.log(`Found ${querySnapshot.docs.length} task lists`);
+      // Execute the query
+      const querySnapshot = await getDocs(listQuery);
 
-    // Map the documents to our TaskList interface
-    const listData: dbTaskList[] = querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        name: data.name,
-        createdAt: new Date(data.createdAt?.seconds * 1000 || Date.now()),
-      };
-    });
+      // Map the documents to our TaskList interface
+      const listData: dbTaskList[] = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: data.name,
+          createdAt: new Date(data.createdAt?.seconds * 1000 || Date.now()),
+        };
+      });
 
-    setTaskLists(listData);
+      setTaskLists(listData);
 
-    // Set the first list as selected by default if there's at least one list
-    if (listData.length > 0 && !selectedListId) {
-      setSelectedListId(listData[0].id);
-    }
-  } catch (err) {
-    console.error("Error fetching task lists:", err);
-  }
+      // Set the first list as selected by default if there's at least one list
+      if (listData.length > 0 && !selectedListId) {
+        setSelectedListId(listData[0].id);
+      }
+    },
+    "Error fetching task lists:"
+  );
 };
 
 export const fetchTasks = async (
   setTasks: (tasks: dbTask[]) => void,
   selectedListId: string | null,
-  setError: (error: string) => void
 ) => {
-  
+  handleFirebaseOperation(
+    async () => {
 
-  try {
-    console.log(`Fetching tasks for list ID: ${selectedListId}`);
+      // Create a query against the tasks collection, filtered by list ID
+      const tasksQuery = query(
+        collection(db, "tasks"),
+        where("listId", "==", selectedListId)
+      );
 
-    // Create a query against the tasks collection, filtered by list ID
-    const tasksQuery = query(
-      collection(db, "tasks"),
-      where("listId", "==", selectedListId)
-    );
+      // Execute the query
+      const querySnapshot = await getDocs(tasksQuery);
 
-    // Execute the query
-    const querySnapshot = await getDocs(tasksQuery);
-    console.log(`Found ${querySnapshot.docs.length} tasks`);
+      // Map the documents to our Task interface
+      const tasksList: dbTask[] = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          title: data.title,
+          completed: data.completed || false,
+          location: data.location || null,
+        };
+      });
 
-    // Map the documents to our Task interface
-    const tasksList: dbTask[] = querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        title: data.title,
-        completed: data.completed || false,
-        location: data.location || null,
-      };
-    });
-
-    setTasks(tasksList);
-  } catch (err) {
-    console.error("Error fetching tasks:", err);
-    setError("Failed to load tasks. Please try again later.");
-  }
+      setTasks(tasksList);
+    },
+    "Error fetching tasks:"
+  );
 };
 
 export const updateTaskCompletion = async (taskId: string, currentStatus: boolean) => {

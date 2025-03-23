@@ -30,8 +30,6 @@ import { requestForegroundPermissionsAsync, getCurrentPositionAsync } from "expo
 import MapModal from "@/components/custom/MapModal";
 
 
-
-
 export default function TasksScreen() {
   const [tasks, setTasks] = useState<dbTask[]>([]);
   const [selectedTask, setSelectedTask] = useState<dbTask | null>(null);
@@ -95,7 +93,7 @@ export default function TasksScreen() {
   useEffect(() => {
     try {
       setLoading(true);
-      api.fetchTasks(setTasks, selectedListId, setError);
+      api.fetchTasks(setTasks, selectedListId);
     } catch (err) {
       console.error("Error fetching tasks:", err);
     } finally {
@@ -126,8 +124,6 @@ export default function TasksScreen() {
       Alert.alert('Error', 'Could not get your current location');
     }
   };
-
-
 
   // Toggle task completion status
   const toggleTaskCompletion = async (taskId: string, currentStatus: boolean) => {
@@ -324,9 +320,7 @@ export default function TasksScreen() {
     );
   };
 
-
   const showMapModal = () => {
-
     return (
       <MapModal
         isMapModalVisible={isMapModalVisible}
@@ -334,8 +328,6 @@ export default function TasksScreen() {
         userLocation={userLocation}
         taskLocation={selectedTask?.location || null}
         onLocationSelect={(marker) => {
-          console.log("marker", marker)
-          console.log("editing", editing)
           if (selectedTask?.id) {
             updateTaskLocation(selectedTask.id, marker);
           }
@@ -345,33 +337,34 @@ export default function TasksScreen() {
     );
   };
 
+  const TASK_MENU_ACTIONS = [
+    {
+      title: "Edit",
+      systemIcon: Platform.OS === "ios" ? "square.and.pencil" : undefined,
+      id: Platform.OS === "android" ? "edit" : undefined,
+      destructive: false,
+    },
+    {
+      title: "Set Location",
+      systemIcon: Platform.OS === "ios" ? "location" : undefined,
+      id: Platform.OS === "android" ? "set_location" : undefined,
+      destructive: false,
+    },
+    {
+      title: "Delete",
+      systemIcon: Platform.OS === "ios" ? "trash" : undefined,
+      id: Platform.OS === "android" ? "delete" : undefined,
+      destructive: true,
+    },
+  ];
+
+
   // Render each task item
   const renderTask = ({ item }: { item: dbTask }) => {
     const isEditing = item.id === editing.taskId;
 
     // Define menu actions
-    const menuActions = [
-      {
-        title: "Edit",
-        systemIcon: Platform.OS === "ios" ? "square.and.pencil" : undefined,
-        // For Android, we can provide action IDs that match drawable resource names
-        // or use a more generic approach
-        id: Platform.OS === "android" ? "edit" : undefined,
-        destructive: false,
-      },
-      {
-        title: "Set Location",
-        systemIcon: Platform.OS === "ios" ? "location" : undefined,
-        id: Platform.OS === "android" ? "set_location" : undefined,
-        destructive: false,
-      },
-      {
-        title: "Delete",
-        systemIcon: Platform.OS === "ios" ? "trash" : undefined,
-        id: Platform.OS === "android" ? "delete" : undefined,
-        destructive: true,
-      },
-    ];
+    const menuActions = TASK_MENU_ACTIONS;
 
     return (
       <ContextMenu
