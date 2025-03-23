@@ -53,11 +53,10 @@ npm install
 yarn install
 ```
 
-3. Start the development server
 
-```bash
-npx expo start
-```
+Since we're using react-native-popup-menu, we have to create a dev build with eas:
+
+
 
 ### Deployment with EAS
 
