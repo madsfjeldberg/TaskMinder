@@ -9,6 +9,9 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
+import { signOut } from "firebase/auth";
+import { auth } from "@/database/firebase";
+import { router } from "expo-router";
 
 interface TitleBarProps {
   title?: string;
@@ -17,7 +20,11 @@ interface TitleBarProps {
 
 export function TitleBar({
   title = "TaskMinder.",
-  onProfilePress = () => console.log("Profile pressed"),
+  onProfilePress = () => {
+    signOut(auth);
+    console.log("Signing out");
+    router.replace("/");
+  },
 }: TitleBarProps) {
   const insets = useSafeAreaInsets();
 

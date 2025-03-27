@@ -1,18 +1,20 @@
-import React from 'react';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import React from "react";
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from "@react-navigation/native";
+import { useFonts } from "expo-font";
+import { Stack, useRouter, useRootNavigation } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
+import "react-native-reanimated";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { View, ActivityIndicator } from "react-native";
 
-import { useColorScheme } from '@/hooks/useColorScheme';
-
-export const unstable_settings = {
-  initialRouteName: "auth",
-};
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { useAuth } from "@/hooks/useAuth";
 
 export const options = {
   headerShown: false,
@@ -24,8 +26,12 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
+
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const rootNavigation = useRootNavigation();
 
   useEffect(() => {
     if (loaded) {
@@ -33,16 +39,43 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
-  if (!loaded) {
-    return null;
+  useEffect(() => {
+    if (loading || !rootNavigation?.isReady()) return;
+
+    // If we can't go back, we're at the root
+    const isRoot = !router.canGoBack();
+
+    if (!user && !isRoot) {
+      // Redirect to the sign-in page.
+      router.replace("/");
+    } else if (user && isRoot) {
+      // Redirect away from the sign-in page.
+      router.replace("/tasks");
+    }
+  }, [user, loading, router, rootNavigation]);
+
+  if (!loaded || loading) {
+    return (
+      <SafeAreaProvider>
+        <ThemeProvider
+          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+        >
+          <View
+            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+          >
+            <ActivityIndicator size="large" color="#007AFF" />
+          </View>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </SafeAreaProvider>
+    );
   }
 
   return (
     <SafeAreaProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack
-          screenOptions={options}
-        >
+      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+        <Stack screenOptions={options}>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
         </Stack>
