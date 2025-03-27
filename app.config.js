@@ -3,12 +3,13 @@ export default {
   slug: "TaskMinder",
   version: "1.1.0",
   orientation: "portrait",
-  icon: "./assets/images/icon.png",
+  icon: "./assets/images/web/apple-touch-icon.png",
   scheme: "taskminder",
   userInterfaceStyle: "automatic",
   newArchEnabled: true,
   owner: "fjeldberg",
   ios: {
+    icon: "./assets/images/ios/AppIcon~ios-marketing.png",
     supportsTablet: true,
     bundleIdentifier: "com.fjeldberg.TaskMinder",
     infoPlist: {
@@ -20,16 +21,41 @@ export default {
   },
   android: {
     package: "com.fjeldberg.TaskMinder",
+    icon: "./assets/images/android/play_store_512.png",
     adaptiveIcon: {
-      foregroundImage: "./assets/images/adaptive-icon.png",
-      backgroundColor: "#ffffff",
+      foregroundImage: "./assets/images/android/res/mipmap-xxxhdpi/ic_launcher.png",
+      backgroundColor: "#ffffff"
     },
     permissions: ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
   },
   web: {
     bundler: "metro",
     output: "static",
-    favicon: "./assets/images/favicon.png",
+    favicon: "./assets/images/web/favicon.png",
+    icons: [
+      {
+        src: "./assets/images/web/icon-192.png",
+        sizes: "192x192",
+        type: "image/png"
+      },
+      {
+        src: "./assets/images/web/icon-512.png",
+        sizes: "512x512",
+        type: "image/png"
+      },
+      {
+        src: "./assets/images/web/icon-192-maskable.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "maskable"
+      },
+      {
+        src: "./assets/images/web/icon-512-maskable.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable"
+      }
+    ]
   },
   plugins: ["expo-router"],
   experiments: {

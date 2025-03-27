@@ -7058,6 +7058,13 @@ react-native-is-edge-to-edge@^1.1.6:
   resolved "https://registry.npmjs.org/react-native-is-edge-to-edge/-/react-native-is-edge-to-edge-1.1.6.tgz"
   integrity sha512-1pHnFTlBahins6UAajXUqeCOHew9l9C2C8tErnpGC3IyLJzvxD+TpYAixnCbrVS52f7+NvMttbiSI290XfwN0w==
 
+react-native-login-screen@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/react-native-login-screen/-/react-native-login-screen-5.0.0.tgz"
+  integrity sha512-vvUPtH4gJJAMfovevakBy1RBpMem7Rl3PSuIWYh/TdC5ZWfYTYgYxyC4TOoLyVC/hlbS0F6OfYoDy0Hua7n6YA==
+  dependencies:
+    react-native-text-input-interactive ">=0.1.4"
+
 react-native-maps@^1.20.1:
   version "1.20.1"
   resolved "https://registry.npmjs.org/react-native-maps/-/react-native-maps-1.20.1.tgz"
@@ -7107,6 +7114,11 @@ react-native-screens@*, "react-native-screens@>= 4.0.0", react-native-screens@~4
   dependencies:
     react-freeze "^1.0.0"
     warn-once "^0.1.0"
+
+react-native-text-input-interactive@>=0.1.4:
+  version "0.1.5"
+  resolved "https://registry.npmjs.org/react-native-text-input-interactive/-/react-native-text-input-interactive-0.1.5.tgz"
+  integrity sha512-4lwr1JL4iKyQuushNXvQt7N0yuae1HiyT8bCwN03m/BSv9DWV0++65T/RN1qe7dwDV5ZPKjIzj/yeGOqZbYH0A==
 
 react-native-vector-icons@^10.2.0:
   version "10.2.0"
