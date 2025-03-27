@@ -8,13 +8,14 @@ type dbTask = {
     latitude: number;
     longitude: number;
   } | null;
-}
+};
 
 // List interface
-type dbTaskList = {
+export interface dbTaskList {
   id: string;
   name: string;
   createdAt: Date;
+  userId: string;
 }
 
 type HorizontalScrollListProps = {
@@ -23,7 +24,7 @@ type HorizontalScrollListProps = {
   setIsNewListModalVisible: (visible: boolean) => void;
   onRenameList: (list: dbTaskList) => void;
   onDeleteList: (listId: string) => void;
-}
+};
 
 type TaskListProps = {
   tasks: dbTask[];
@@ -34,7 +35,7 @@ type TaskListProps = {
   saveTaskTitle: (id: string) => void;
   createNewTask: () => void;
   renderTask: ListRenderItem<dbTask>;
-}
+};
 
 type NewListModalProps = {
   isVisible: boolean;
@@ -42,18 +43,21 @@ type NewListModalProps = {
   onCreateList: () => void;
   newListName: string;
   setNewListName: (name: string) => void;
-}
+};
 
 type MapModalProps = {
   isMapModalVisible: boolean;
   setIsMapModalVisible: (visible: boolean) => void;
   userLocation: UserLocation;
-  taskLocation: {
-    latitude: number;
-    longitude: number;
-  } | null | undefined;
+  taskLocation:
+    | {
+        latitude: number;
+        longitude: number;
+      }
+    | null
+    | undefined;
   onLocationSelect: (marker: TaskMarker) => void;
-}
+};
 
 type TaskMarker = {
   coordinate: {
@@ -67,7 +71,7 @@ type UserLocation = {
   longitude: number;
   latitudeDelta: number;
   longitudeDelta: number;
-}
+};
 
 export type {
   dbTask,

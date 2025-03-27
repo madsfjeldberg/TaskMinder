@@ -1,6 +1,14 @@
 import { Feather } from "@expo/vector-icons";
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Platform,
+  Alert,
+} from "react-native";
 import { HorizontalScrollListProps, dbTaskList } from "@/types/types";
 import ContextMenu from "react-native-context-menu-view";
 export default function HorizontalScrollList({
@@ -10,7 +18,6 @@ export default function HorizontalScrollList({
   onRenameList,
   onDeleteList,
 }: HorizontalScrollListProps) {
-
   const LIST_MENU_ACTIONS = [
     {
       title: "Rename",
@@ -27,39 +34,40 @@ export default function HorizontalScrollList({
   ];
 
   // New renderListWithContextMenu function
-  const renderListWithContextMenu = (list: dbTaskList) => {
+  const renderListWithContextMenu = (list: dbTaskList, index: number) => {
     return (
-      <ContextMenu
-        key={list.id}
-        actions={LIST_MENU_ACTIONS}
-        onPress={(e) => {
-          // Handle menu action selection
-          if (e.nativeEvent.index === 0) {
-            // Rename action
-            onRenameList && onRenameList(list);
-          } else if (e.nativeEvent.index === 1) {
-            // Delete action
-            Alert.alert(
-              "Delete List",
-              `Are you sure you want to delete "${list.name}"? All tasks in this list will also be deleted.`,
-              [
-                {
-                  text: "Cancel",
-                  style: "cancel",
-                },
-                {
-                  text: "Delete",
-                  onPress: () => onDeleteList && onDeleteList(list.id),
-                  style: "destructive",
-                },
-              ]
-            );
-          }
-        }}
-        previewBackgroundColor="#f9f9f9"
-      >
-        {renderListItem(list)}
-      </ContextMenu>
+      <View key={`list_${list.id}_${index}`}>
+        <ContextMenu
+          actions={LIST_MENU_ACTIONS}
+          onPress={(e) => {
+            // Handle menu action selection
+            if (e.nativeEvent.index === 0) {
+              // Rename action
+              onRenameList && onRenameList(list);
+            } else if (e.nativeEvent.index === 1) {
+              // Delete action
+              Alert.alert(
+                "Delete List",
+                `Are you sure you want to delete "${list.name}"? All tasks in this list will also be deleted.`,
+                [
+                  {
+                    text: "Cancel",
+                    style: "cancel",
+                  },
+                  {
+                    text: "Delete",
+                    onPress: () => onDeleteList && onDeleteList(list.id),
+                    style: "destructive",
+                  },
+                ]
+              );
+            }
+          }}
+          previewBackgroundColor="#f9f9f9"
+        >
+          {renderListItem(list)}
+        </ContextMenu>
+      </View>
     );
   };
 
@@ -70,7 +78,11 @@ export default function HorizontalScrollList({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.listsScrollContent}
       >
-        {taskLists.map(list => renderListWithContextMenu(list))}
+        {/* Check for duplicate IDs and render uniquely */}
+        {taskLists.map((list, index) => {
+          // Use unique compound key with index fallback
+          return renderListWithContextMenu(list, index);
+        })}
 
         <TouchableOpacity
           style={styles.addListButton}

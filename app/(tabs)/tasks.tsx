@@ -17,7 +17,7 @@ import {
   serverTimestamp,
   deleteDoc,
 } from "firebase/firestore";
-import { db } from "../../database/firebase";
+import { db, auth } from "../../database/firebase";
 import { Feather } from "@expo/vector-icons";
 import TaskList from "@/components/custom/TaskList";
 import { dbTask, dbTaskList, TaskMarker, UserLocation } from "@/types/types";
@@ -26,9 +26,11 @@ import NewListModal from "@/components/custom/NewListModal";
 import * as api from "@/database/api";
 import { MenuProvider } from "react-native-popup-menu";
 import ContextMenu from "react-native-context-menu-view";
-import { requestForegroundPermissionsAsync, getCurrentPositionAsync } from "expo-location";
+import {
+  requestForegroundPermissionsAsync,
+  getCurrentPositionAsync,
+} from "expo-location";
 import MapModal from "@/components/custom/MapModal";
-
 
 export default function TasksScreen() {
   const [tasks, setTasks] = useState<dbTask[]>([]);
@@ -54,7 +56,7 @@ export default function TasksScreen() {
     taskId: null,
     text: "",
   });
-  
+
   // watch for changes in selectedTask
   useEffect(() => {
     if (selectedTask?.id) {
@@ -90,14 +92,16 @@ export default function TasksScreen() {
       setLoading(false);
     }
   }, [selectedListId]);
-  
 
   // Function to get user location
   // Using expo-location
   const getUserLocation = async () => {
     let { status } = await requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'Permission to access location was denied');
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission Denied",
+        "Permission to access location was denied"
+      );
       return;
     }
 
@@ -110,18 +114,21 @@ export default function TasksScreen() {
         longitudeDelta: 0.0421,
       });
     } catch (error) {
-      console.error('Error getting location:', error);
-      Alert.alert('Error', 'Could not get your current location');
+      console.error("Error getting location:", error);
+      Alert.alert("Error", "Could not get your current location");
     }
   };
 
   // Toggle task completion status
-  const toggleTaskCompletion = async (taskId: string, currentStatus: boolean) => {
+  const toggleTaskCompletion = async (
+    taskId: string,
+    currentStatus: boolean
+  ) => {
     // Update task completion status in Firestore
     api.updateTaskCompletion(taskId, currentStatus);
 
     // Update local state
-    setTasks((prevTasks) => 
+    setTasks((prevTasks) =>
       prevTasks.map((task) =>
         task.id === taskId ? { ...task, completed: !currentStatus } : task
       )
@@ -130,24 +137,23 @@ export default function TasksScreen() {
 
   // Toggle task location
   const updateTaskLocation = async (taskId: string, marker: TaskMarker) => {
-
     // Update task location in Firestore
     api.updateTaskLocation(taskId, marker);
 
     // Get location from marker
     const newLocation = {
       latitude: marker.coordinate.latitude,
-      longitude: marker.coordinate.longitude
-    }
+      longitude: marker.coordinate.longitude,
+    };
 
     // Update local state, with new location
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
-        task.id === taskId 
-          ? { 
-              ...task, 
-              location: newLocation
-            } 
+        task.id === taskId
+          ? {
+              ...task,
+              location: newLocation,
+            }
           : task
       )
     );
@@ -157,8 +163,9 @@ export default function TasksScreen() {
     setSelectedTask((prev) =>
       prev && prev.id === taskId
         ? {
-          ...prev, location: newLocation
-        }
+            ...prev,
+            location: newLocation,
+          }
         : prev
     );
   };
@@ -170,11 +177,19 @@ export default function TasksScreen() {
       return;
     }
 
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      console.error("No user logged in");
+      return;
+    }
+
     try {
-      // Add new task list to Firestore
+      // Add new task list to Firestore with userId
       const docRef = await addDoc(collection(db, "task_lists"), {
         name: newListName.trim(),
         createdAt: serverTimestamp(),
+        userId: currentUser.uid,
       });
 
       // Add to local state
@@ -182,6 +197,7 @@ export default function TasksScreen() {
         id: docRef.id,
         name: newListName.trim(),
         createdAt: new Date(),
+        userId: currentUser.uid,
       };
 
       setTaskLists((prev) => [...prev, newList]);
@@ -196,7 +212,6 @@ export default function TasksScreen() {
 
   // Create a new task
   const createNewTask = async () => {
-
     try {
       // Create an empty task
       const newTask = {
@@ -291,100 +306,103 @@ export default function TasksScreen() {
   };
 
   // Delete a task list
-const deleteList = async (listId: string) => {
-  try {
-    // Remove from Firestore
-    const listRef = doc(db, "task_lists", listId);
-    await deleteDoc(listRef);
+  const deleteList = async (listId: string) => {
+    try {
+      // Remove from Firestore
+      const listRef = doc(db, "task_lists", listId);
+      await deleteDoc(listRef);
 
-    // Remove from local state
-    setTaskLists((prevLists) => prevLists.filter((list) => list.id !== listId));
+      // Remove from local state
+      setTaskLists((prevLists) =>
+        prevLists.filter((list) => list.id !== listId)
+      );
 
-    // If the deleted list was selected, select another list
-    if (selectedListId === listId) {
-      const newSelectedList = taskLists.find(list => list.id !== listId);
-      setSelectedListId(newSelectedList ? newSelectedList.id : null);
+      // If the deleted list was selected, select another list
+      if (selectedListId === listId) {
+        const newSelectedList = taskLists.find((list) => list.id !== listId);
+        setSelectedListId(newSelectedList ? newSelectedList.id : null);
+      }
+    } catch (err) {
+      console.error("Error deleting task list:", err);
+      Alert.alert("Error", "Could not delete task list. Please try again.");
     }
-  } catch (err) {
-    console.error("Error deleting task list:", err);
-    Alert.alert("Error", "Could not delete task list. Please try again.");
-  }
-};
+  };
 
-// Set up for renaming a list
-const [renamingList, setRenamingList] = useState<dbTaskList | null>(null);
-const [newName, setNewName] = useState("");
+  // Set up for renaming a list
+  const [renamingList, setRenamingList] = useState<dbTaskList | null>(null);
+  const [newName, setNewName] = useState("");
 
-// Show rename dialog
-const handleRenameList = (list: dbTaskList) => {
-  // Store the specific list ID we want to rename
-  const listIdToRename = list.id;
-  const currentListName = list.name;
-  
-  Alert.prompt(
-    "Rename List",
-    "Enter a new name for the list:",
-    [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Rename",
-        onPress: (value) => {
-          if (value && value.trim()) {
-            // Pass the specific list ID to ensure we rename the right list
-            renameTaskList(listIdToRename, value.trim());
-          }
+  // Show rename dialog
+  const handleRenameList = (list: dbTaskList) => {
+    // Store the specific list ID we want to rename
+    const listIdToRename = list.id;
+    const currentListName = list.name;
+
+    Alert.prompt(
+      "Rename List",
+      "Enter a new name for the list:",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
         },
-      },
-    ],
-    "plain-text",
-    currentListName
-  );
-};
-
-// Rename a task list
-const renameTaskList = async (listId: string, newName: string) => {
-  try {
-    console.log(`Renaming list ${listId} to "${newName}"`);
-    
-    const listRef = doc(db, "task_lists", listId);
-    await updateDoc(listRef, {
-      name: newName,
-    });
-
-    // Update local state with the specific list ID
-    setTaskLists((prevLists) =>
-      prevLists.map((list) =>
-        list.id === listId ? { ...list, name: newName } : list
-      )
+        {
+          text: "Rename",
+          onPress: (value) => {
+            if (value && value.trim()) {
+              // Pass the specific list ID to ensure we rename the right list
+              renameTaskList(listIdToRename, value.trim());
+            }
+          },
+        },
+      ],
+      "plain-text",
+      currentListName
     );
-  } catch (err) {
-    console.error("Error renaming task list:", err);
-    Alert.alert("Error", "Could not rename task list. Please try again.");
-  }
-};
+  };
+
+  // Rename a task list
+  const renameTaskList = async (listId: string, newName: string) => {
+    try {
+      console.log(`Renaming list ${listId} to "${newName}"`);
+
+      const listRef = doc(db, "task_lists", listId);
+      await updateDoc(listRef, {
+        name: newName,
+      });
+
+      // Update local state with the specific list ID
+      setTaskLists((prevLists) =>
+        prevLists.map((list) =>
+          list.id === listId ? { ...list, name: newName } : list
+        )
+      );
+    } catch (err) {
+      console.error("Error renaming task list:", err);
+      Alert.alert("Error", "Could not rename task list. Please try again.");
+    }
+  };
 
   // Render task list item
   const renderListItem = (list: dbTaskList) => {
     const isSelected = selectedListId === list.id;
 
     return (
-      <TouchableOpacity
-        key={list.id}
-        style={[styles.listItem, isSelected && styles.isSelectedListItem]}
-        onPress={() => setSelectedListId(list.id)}
-      >
-        <Text
-          style={[
-            styles.listItemText,
-            isSelected && styles.selectedListItemText,
-          ]}
+      <View key={list.id}>
+        <TouchableOpacity
+          style={[styles.listItem, isSelected && styles.isSelectedListItem]}
+          onPress={() => setSelectedListId(list.id)}
         >
-          {list.name}
-        </Text>
-      </TouchableOpacity>
+          <Text
+            style={[
+              styles.listItemText,
+              isSelected && styles.selectedListItemText,
+            ]}
+          >
+            {list.name}
+          </Text>
+        </TouchableOpacity>
+      </View>
     );
   };
 
@@ -392,7 +410,7 @@ const renameTaskList = async (listId: string, newName: string) => {
     if (!selectedTask) {
       return null;
     }
-    
+
     return (
       <MapModal
         isMapModalVisible={isMapModalVisible}
@@ -403,7 +421,6 @@ const renameTaskList = async (listId: string, newName: string) => {
           if (selectedTask?.id) {
             updateTaskLocation(selectedTask.id, marker);
           }
-        
         }}
       />
     );
@@ -429,7 +446,6 @@ const renameTaskList = async (listId: string, newName: string) => {
       destructive: true,
     },
   ];
-
 
   // Render each task item
   const renderTask = ({ item }: { item: dbTask }) => {
@@ -572,7 +588,9 @@ const renameTaskList = async (listId: string, newName: string) => {
     );
   }
 
-  {/* MAIN RENDER */}
+  {
+    /* MAIN RENDER */
+  }
   return (
     <MenuProvider>
       <View style={styles.container}>
@@ -774,5 +792,5 @@ const styles = StyleSheet.create({
   },
   checkboxContainer: {
     marginRight: 0,
-  }
+  },
 });
