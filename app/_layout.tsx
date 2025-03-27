@@ -16,10 +16,6 @@ import { View, ActivityIndicator } from "react-native";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useAuth } from "@/hooks/useAuth";
 
-export const options = {
-  headerShown: false,
-};
-
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
@@ -74,10 +70,8 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={options}>
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>

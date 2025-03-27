@@ -11,12 +11,12 @@ type dbTask = {
 };
 
 // List interface
-export interface dbTaskList {
+type dbTaskList = {
   id: string;
   name: string;
   createdAt: Date;
   userId: string;
-}
+};
 
 type HorizontalScrollListProps = {
   taskLists: dbTaskList[];

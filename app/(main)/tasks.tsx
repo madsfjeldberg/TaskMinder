@@ -17,7 +17,7 @@ import {
   serverTimestamp,
   deleteDoc,
 } from "firebase/firestore";
-import { db, auth } from "../../database/firebase";
+import { db, auth } from "@/database/firebase";
 import { Feather } from "@expo/vector-icons";
 import TaskList from "@/components/custom/TaskList";
 import { dbTask, dbTaskList, TaskMarker, UserLocation } from "@/types/types";

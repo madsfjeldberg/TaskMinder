@@ -9,24 +9,22 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import { signOut } from "firebase/auth";
-import { auth } from "@/database/firebase";
-import { router } from "expo-router";
+import { useNavigation } from "expo-router";
+import { DrawerActions } from "@react-navigation/native";
 
 interface TitleBarProps {
   title?: string;
-  onProfilePress?: () => void;
 }
 
 export function TitleBar({
   title = "TaskMinder.",
-  onProfilePress = () => {
-    signOut(auth);
-    console.log("Signing out");
-    router.replace("/");
-  },
 }: TitleBarProps) {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
+
+  const handleProfilePress = () => {
+    navigation.dispatch(DrawerActions.toggleDrawer());
+  };
 
   // Calculate the total height including status bar
   const statusBarHeight =
@@ -43,10 +41,10 @@ export function TitleBar({
 
         <Pressable
           style={styles.profileButton}
-          onPress={onProfilePress}
+          onPress={handleProfilePress}
           android_ripple={{ color: "rgba(255,255,255,0.2)", borderless: true }}
         >
-          <Feather name="user" size={28} color="#ffffff" />
+          <Feather name="menu" size={28} color="#ffffff" />
         </Pressable>
       </View>
     </View>
