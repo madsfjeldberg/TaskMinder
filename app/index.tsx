@@ -12,7 +12,7 @@ export default function Page() {
     }
   }, [isLoggedIn]);
   const onButtonPress = () => {
-    router.push("/auth" as any);
+    router.push("/authentication" as any);
   };
 
   return (

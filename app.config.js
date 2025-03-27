@@ -18,6 +18,23 @@ export default {
       NSLocationAlwaysUsageDescription:
         "This app needs access to location to show your position on the map.",
     },
+    modularHeaders: true, // This sets use_modular_headers! globally
+    buildConfiguration: {
+      extraPodfileProperties: [
+        'use_frameworks! :linkage => :static'
+      ]
+    },
+    podModuleConfig: {
+      "FirebaseAuth": {
+        modular_headers: true
+      },
+      "FirebaseCoreInternal": {
+        modular_headers: true
+      },
+      "GoogleUtilities": {
+        modular_headers: true
+      }
+    }
   },
   android: {
     package: "com.fjeldberg.TaskMinder",
@@ -57,7 +74,18 @@ export default {
       }
     ]
   },
-  plugins: ["expo-router"],
+  plugins: [
+    "expo-router",
+    "expo-secure-store",
+    [
+      "expo-build-properties",
+      {
+        ios: {
+          useFrameworks: "static"
+        }
+      }
+    ]
+  ],
   experiments: {
     typedRoutes: true,
     tsconfigPaths: true,
