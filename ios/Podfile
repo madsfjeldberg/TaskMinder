@@ -1,3 +1,6 @@
+source 'https://github.com/expo/expo.git'
+source 'https://cdn.cocoapods.org/'
+
 require File.join(File.dirname(`node --print "require.resolve('expo/package.json')"`), "scripts/autolinking")
 require File.join(File.dirname(`node --print "require.resolve('react-native/package.json')"`), "scripts/react_native_pods")
 
@@ -41,6 +44,22 @@ target 'TaskMinder' do
     :app_path => "#{Pod::Config.instance.installation_root}/..",
     :privacy_file_aggregation_enabled => podfile_properties['apple.privacyManifestAggregationEnabled'] != 'false',
   )
+
+  pre_install do |installer|
+  find_replace = lambda do |file_path|
+    text = File.read(file_path)
+    new_contents = text.gsub(
+      "#include <string>",
+      "#include <string>\n#include <string_view>"
+    )
+    File.open(file_path, "w") { |file| file.puts new_contents }
+  end
+
+  folly_unicode = File.join(File.dirname(__FILE__), 'Pods', 'RCT-Folly', 'folly', 'Unicode.cpp')
+  if File.exist?(folly_unicode)
+    find_replace.call(folly_unicode)
+    end
+  end
 
   post_install do |installer|
     react_native_post_install(
