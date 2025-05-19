@@ -27,7 +27,6 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="taskminder"/>
-        <data android:scheme="com.fjeldberg.TaskMinder"/>
         <data android:scheme="exp+taskminder"/>
       </intent-filter>
     </activity>
