@@ -16,14 +16,18 @@ type dbTaskList = {
   name: string;
   createdAt: Date;
   userId: string;
+  location: ListLocation | null;
 };
 
 type HorizontalScrollListProps = {
   taskLists: dbTaskList[];
-  renderListItem: (list: dbTaskList) => React.ReactNode;
-  setIsNewListModalVisible: (visible: boolean) => void;
+  setTaskLists: (lists: dbTaskList[]) => void;
+  selectedListId: string | null;
+  setSelectedListId: (listId: string | null) => void;
+  setIsMapModalVisible: (visible: boolean) => void;
   onRenameList: (list: dbTaskList) => void;
   onDeleteList: (listId: string) => void;
+  setSelectedList: (list: dbTaskList) => void;
 };
 
 type TaskListProps = {
@@ -49,13 +53,7 @@ type MapModalProps = {
   isMapModalVisible: boolean;
   setIsMapModalVisible: (visible: boolean) => void;
   userLocation: UserLocation;
-  taskLocation:
-    | {
-        latitude: number;
-        longitude: number;
-      }
-    | null
-    | undefined;
+  listLocation: ListLocation | null;
   onLocationSelect: (marker: TaskMarker) => void;
 };
 
@@ -66,7 +64,21 @@ type TaskMarker = {
   };
 };
 
+type ListMarker = {
+  coordinate: {
+    latitude: number;
+    longitude: number;
+  };
+};
+
 type UserLocation = {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+};
+
+type ListLocation = {
   latitude: number;
   longitude: number;
   latitudeDelta: number;
@@ -82,4 +94,5 @@ export type {
   MapModalProps,
   TaskMarker,
   UserLocation,
+  ListMarker,
 };

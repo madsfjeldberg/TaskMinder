@@ -1,4 +1,6 @@
 import React from "react";
+import { useEffect } from "react";
+import { BackHandler, Platform } from "react-native";
 import {
   View,
   Text,
@@ -16,6 +18,21 @@ export default function NewListModal({
   newListName,
   setNewListName,
 }: NewListModalProps) {
+
+  useEffect(() => {
+    if (isVisible) {
+      if (Platform.OS === "android") {
+        const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
+          onClose();
+          return true; // Prevent default behavior
+        });
+      
+
+        return () => backHandler.remove(); // Clean up the event listener
+      }
+  }
+}, [isVisible, onClose]);
+
   return (
     <Modal
       isVisible={isVisible}

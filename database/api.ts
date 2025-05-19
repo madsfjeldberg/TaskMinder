@@ -135,3 +135,18 @@ export const updateTaskLocation = async (
     });
   }, "Error updating task location:");
 };
+
+export const updateListLocation = async(
+  listId: string,
+  marker: TaskMarker
+) => {
+  handleFirebaseOperation(async () => {
+    const listRef = doc(db, "task_lists", listId);
+    await updateDoc(listRef, {
+      location: {
+        latitude: marker.coordinate.latitude,
+        longitude: marker.coordinate.longitude,
+      },
+    });
+  }, "Error updating list location:");
+}

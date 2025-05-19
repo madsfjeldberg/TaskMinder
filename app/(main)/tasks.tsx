@@ -37,6 +37,7 @@ export default function TasksScreen() {
   const [selectedTask, setSelectedTask] = useState<dbTask | null>(null);
   const [taskLists, setTaskLists] = useState<dbTaskList[]>([]);
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
+  const [selectedList, setSelectedList] = useState<dbTaskList | null>(null);
   const [loading, setLoading] = useState(true);
   const [listsLoading, setListsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -135,80 +136,40 @@ export default function TasksScreen() {
     );
   };
 
-  // Toggle task location
-  const updateTaskLocation = async (taskId: string, marker: TaskMarker) => {
-    // Update task location in Firestore
-    api.updateTaskLocation(taskId, marker);
+  // // Toggle task location
+  // const updateTaskLocation = async (taskId: string, marker: TaskMarker) => {
+  //   // Update task location in Firestore
+  //   api.updateTaskLocation(taskId, marker);
 
-    // Get location from marker
-    const newLocation = {
-      latitude: marker.coordinate.latitude,
-      longitude: marker.coordinate.longitude,
-    };
+  //   // Get location from marker
+  //   const newLocation = {
+  //     latitude: marker.coordinate.latitude,
+  //     longitude: marker.coordinate.longitude,
+  //   };
 
-    // Update local state, with new location
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === taskId
-          ? {
-              ...task,
-              location: newLocation,
-            }
-          : task
-      )
-    );
+  //   // Update local state, with new location
+  //   setTasks((prevTasks) =>
+  //     prevTasks.map((task) =>
+  //       task.id === taskId
+  //         ? {
+  //             ...task,
+  //             location: newLocation,
+  //           }
+  //         : task
+  //     )
+  //   );
 
-    // Update selected task, with new location
-    // Updates location of marker in map modal
-    setSelectedTask((prev) =>
-      prev && prev.id === taskId
-        ? {
-            ...prev,
-            location: newLocation,
-          }
-        : prev
-    );
-  };
-
-  // Create a new task list
-  const createNewTaskList = async () => {
-    if (!newListName.trim()) {
-      Alert.alert("Error", "Please enter a list name");
-      return;
-    }
-
-    const currentUser = auth.currentUser;
-
-    if (!currentUser) {
-      console.error("No user logged in");
-      return;
-    }
-
-    try {
-      // Add new task list to Firestore with userId
-      const docRef = await addDoc(collection(db, "task_lists"), {
-        name: newListName.trim(),
-        createdAt: serverTimestamp(),
-        userId: currentUser.uid,
-      });
-
-      // Add to local state
-      const newList: dbTaskList = {
-        id: docRef.id,
-        name: newListName.trim(),
-        createdAt: new Date(),
-        userId: currentUser.uid,
-      };
-
-      setTaskLists((prev) => [...prev, newList]);
-      setSelectedListId(docRef.id);
-      setNewListName("");
-      setIsNewListModalVisible(false);
-    } catch (err) {
-      console.error("Error creating new task list:", err);
-      Alert.alert("Error", "Failed to create new list. Please try again.");
-    }
-  };
+  //   // Update selected task, with new location
+  //   // Updates location of marker in map modal
+  //   setSelectedTask((prev) =>
+  //     prev && prev.id === taskId
+  //       ? {
+  //           ...prev,
+  //           location: newLocation,
+  //         }
+  //       : prev
+  //   );
+  // };
 
   // Create a new task
   const createNewTask = async () => {
@@ -383,49 +344,6 @@ export default function TasksScreen() {
     }
   };
 
-  // Render task list item
-  const renderListItem = (list: dbTaskList) => {
-    const isSelected = selectedListId === list.id;
-
-    return (
-      <View key={list.id}>
-        <TouchableOpacity
-          style={[styles.listItem, isSelected && styles.isSelectedListItem]}
-          onPress={() => setSelectedListId(list.id)}
-        >
-          <Text
-            style={[
-              styles.listItemText,
-              isSelected && styles.selectedListItemText,
-            ]}
-          >
-            {list.name}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    );
-  };
-
-  const showMapModal = () => {
-    if (!selectedTask) {
-      return null;
-    }
-
-    return (
-      <MapModal
-        isMapModalVisible={isMapModalVisible}
-        setIsMapModalVisible={setIsMapModalVisible}
-        userLocation={userLocation}
-        taskLocation={selectedTask?.location}
-        onLocationSelect={(marker) => {
-          if (selectedTask?.id) {
-            updateTaskLocation(selectedTask.id, marker);
-          }
-        }}
-      />
-    );
-  };
-
   const TASK_MENU_ACTIONS = [
     {
       title: "Edit",
@@ -543,17 +461,6 @@ export default function TasksScreen() {
     );
   };
 
-  // New List Modal
-  const renderNewListModal = () => (
-    <NewListModal
-      isVisible={isNewListModalVisible}
-      onClose={() => setIsNewListModalVisible(false)}
-      onCreateList={createNewTaskList}
-      newListName={newListName}
-      setNewListName={setNewListName}
-    />
-  );
-
   // Loading state during initial list fetch
   if (listsLoading) {
     return (
@@ -564,43 +471,43 @@ export default function TasksScreen() {
     );
   }
 
-  // No lists state
-  if (taskLists.length === 0) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.centeredContainer}>
-          <Feather name="list" size={64} color="#ccc" />
-          <Text style={styles.emptyStateText}>No Task Lists</Text>
-          <Text style={styles.emptyStateSubText}>
-            Create your first task list to get started
-          </Text>
+  // // No lists state
+  // if (taskLists.length === 0) {
+  //   return (
+  //     <View style={styles.container}>
+  //       <View style={styles.centeredContainer}>
+  //         <Feather name="list" size={64} color="#ccc" />
+  //         <Text style={styles.emptyStateText}>No Task Lists</Text>
+  //         <Text style={styles.emptyStateSubText}>
+  //           Create your first task list to get started
+  //         </Text>
 
-          <TouchableOpacity
-            style={styles.createListButton}
-            onPress={() => setIsNewListModalVisible(true)}
-          >
-            <Text style={styles.createListButtonText}>Create First List</Text>
-          </TouchableOpacity>
-        </View>
+  //         <TouchableOpacity
+  //           style={styles.createListButton}
+  //           onPress={() => setIsNewListModalVisible(true)}
+  //         >
+  //           <Text style={styles.createListButtonText}>Create First List</Text>
+  //         </TouchableOpacity>
+  //       </View>
 
-        {renderNewListModal()}
-      </View>
-    );
-  }
+  //     </View>
+  //   );
+  // }
 
-  {
-    /* MAIN RENDER */
-  }
+  {/* MAIN RENDER */}
   return (
     <MenuProvider>
       <View style={styles.container}>
         {/* Task Lists Horizontal Scroll */}
         <HorizontalListScroll
           taskLists={taskLists}
-          renderListItem={renderListItem}
-          setIsNewListModalVisible={setIsNewListModalVisible}
+          setTaskLists={setTaskLists}
+          selectedListId={selectedListId}
+          setSelectedListId={setSelectedListId}
+          setIsMapModalVisible={setIsMapModalVisible}
           onRenameList={handleRenameList}
           onDeleteList={deleteList}
+          setSelectedList={setSelectedList}
         />
 
         {/* Loading state for tasks */}
@@ -623,7 +530,7 @@ export default function TasksScreen() {
               }}
             >
               <Text style={styles.retryButtonText}>Retry</Text>
-            </TouchableOpacity>
+              </TouchableOpacity>
           </View>
         ) : tasks.length === 0 ? (
           // Empty tasks state
@@ -651,8 +558,6 @@ export default function TasksScreen() {
           />
         )}
 
-        {renderNewListModal()}
-        {showMapModal()}
       </View>
     </MenuProvider>
   );
@@ -677,26 +582,6 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 16,
-  },
-  listItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginRight: 12,
-    minWidth: 100,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  isSelectedListItem: {
-    borderWidth: 1,
-    borderColor: "#3498db",
-  },
-  listItemText: {
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  selectedListItemText: {
-    fontWeight: "700",
   },
   errorText: {
     color: "#e74c3c",
@@ -750,7 +635,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
   },
-
   taskItem: {
     backgroundColor: "#fff",
     borderRadius: 10,

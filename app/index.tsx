@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   Platform,
   SafeAreaView,
-  Dimensions,
 } from "react-native";
 import { auth } from "@/database/firebase";
 import { FirebaseError } from "firebase/app";
@@ -24,13 +23,11 @@ import CustomAlert from "@/components/custom/CustomAlert";
 import Animated, {
   useAnimatedStyle,
   withSpring,
-  interpolate,
   useSharedValue,
   withTiming,
   runOnJS,
 } from "react-native-reanimated";
 
-const { width } = Dimensions.get("window");
 const TOGGLE_WIDTH = 300;
 const TOGGLE_HEIGHT = 44;
 
@@ -214,7 +211,6 @@ export default function Auth() {
                 autoCapitalize="none"
                 keyboardType="email-address"
                 placeholder="Email"
-                placeholderTextColor="#666"
               />
               <TextInput
                 style={styles.input}
@@ -222,7 +218,6 @@ export default function Auth() {
                 onChangeText={setPassword}
                 secureTextEntry
                 placeholder="Password"
-                placeholderTextColor="#666"
               />
 
               {loading ? (

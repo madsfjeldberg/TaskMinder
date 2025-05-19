@@ -2,30 +2,35 @@ import React, { useEffect, useState } from "react";
 import { Modal, View, Text, TouchableOpacity, StyleSheet, StatusBar, Platform } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { MapModalProps } from "@/types/types";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 
 export default function MapModal({
   isMapModalVisible,
   setIsMapModalVisible,
   userLocation,
-  taskLocation,
+  listLocation,
   onLocationSelect,
 }: MapModalProps) {
   const insets = useSafeAreaInsets();
 
   // State for current marker
-  const [currentMarker, setCurrentMarker] = useState(taskLocation);
-
+  const [currentMarker, setCurrentMarker] = useState(listLocation);
+  
   // Update current marker when task location changes
   useEffect(() => {
-    setCurrentMarker(taskLocation);
-  }, [taskLocation]);
+    setCurrentMarker(listLocation);
+  }, [listLocation]);
 
   // Handles changing task location
   const onMapPress = (e: any) => {
     const { latitude, longitude } = e.nativeEvent.coordinate;
-    const newLocation = { latitude, longitude };
+    const newLocation = {
+      latitude,
+      longitude,
+      latitudeDelta: listLocation?.latitudeDelta ?? 0.01,
+      longitudeDelta: listLocation?.longitudeDelta ?? 0.01,
+    };
 
     setCurrentMarker(newLocation);
 
@@ -52,7 +57,7 @@ export default function MapModal({
             onPress={() => setIsMapModalVisible(false)}
             style={styles.closeButton}
           >
-            <Feather name="x" size={24} color="#333" />
+            <Feather name="x" size={24} />
           </TouchableOpacity>
           <Text style={styles.modalTitle}>Select Location</Text>
         </View>
@@ -71,7 +76,6 @@ export default function MapModal({
             {/* Show the task marker if it exists */}
             {currentMarker && (
               <Marker
-                key={currentMarker.latitude}
                 coordinate={{
                   latitude: currentMarker.latitude,
                   longitude: currentMarker.longitude,
