@@ -75,3 +75,7 @@ expo-env.d.ts
 # @end expo-cli
 
 .vscode
+# Expo
+.expo
+dist/
+web-build/
