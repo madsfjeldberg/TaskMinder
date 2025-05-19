@@ -15,6 +15,8 @@ export function useAuth() {
 
   useEffect(() => {
     // Set up Firebase auth state listener
+    // This will be called whenever the user's sign-in state changes
+    // (e.g., when the user signs in or out)
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         // Store user data in AsyncStorage

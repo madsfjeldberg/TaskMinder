@@ -64,6 +64,7 @@ export default function Auth() {
       // Fade in
       buttonTextOpacity.value = withTiming(1, { duration: 150 });
     });
+    // slide login / signup button
     togglePosition.value = withSpring(isLogin ? (TOGGLE_WIDTH - 8) / 2 : 0, {
       damping: 15,
       stiffness: 100,
@@ -102,7 +103,7 @@ export default function Auth() {
 
   const registerStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ translateX: translateX.value + width }],
+      transform: [{ translateX: translateX.value }],
       opacity: opacity.value,
       position: "absolute",
       width: "100%",
