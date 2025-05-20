@@ -27,8 +27,8 @@ const handleFirebaseOperation = async (
 
 export const fetchTaskLists = (
   setTaskLists: (lists: dbTaskList[]) => void,
-  selectedListId: string | null,
-  setSelectedListId: (id: string | null) => void
+  selectedList: dbTaskList | null,
+  setSelectedList: (list: dbTaskList | null) => void
 ) => {
   const currentUser = auth.currentUser;
   if (!currentUser) {
@@ -59,6 +59,7 @@ export const fetchTaskLists = (
           name: data.name,
           createdAt: data.createdAt?.toDate() || new Date(),
           userId: data.userId,
+          location: data.location || null,
         });
       } else {
         console.warn(`Duplicate task list ID found: ${docId}`);
@@ -71,8 +72,8 @@ export const fetchTaskLists = (
     setTaskLists(lists);
 
     // If no list is selected and we have lists, select the first one
-    if (!selectedListId && lists.length > 0) {
-      setSelectedListId(lists[0].id);
+    if (!selectedList && lists.length > 0) {
+      setSelectedList(lists[0]);
     }
   });
 
@@ -82,13 +83,13 @@ export const fetchTaskLists = (
 
 export const fetchTasks = async (
   setTasks: (tasks: dbTask[]) => void,
-  selectedListId: string | null
+  selectedList: dbTaskList | null
 ) => {
   handleFirebaseOperation(async () => {
     // Create a query against the tasks collection, filtered by list ID
     const tasksQuery = query(
       collection(db, "tasks"),
-      where("listId", "==", selectedListId)
+      where("listId", "==", selectedList?.id)
     );
 
     // Execute the query

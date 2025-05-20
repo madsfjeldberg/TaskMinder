@@ -17,39 +17,24 @@ import {
   serverTimestamp,
   deleteDoc,
 } from "firebase/firestore";
-import { db, auth } from "@/database/firebase";
+import { db } from "@/database/firebase";
 import { Feather } from "@expo/vector-icons";
 import TaskList from "@/components/custom/TaskList";
-import { dbTask, dbTaskList, TaskMarker, UserLocation } from "@/types/types";
+import { dbTask, dbTaskList, UserLocation } from "@/types/types";
 import HorizontalListScroll from "@/components/custom/HorizontalScrollList";
-import NewListModal from "@/components/custom/NewListModal";
 import * as api from "@/database/api";
 import { MenuProvider } from "react-native-popup-menu";
 import ContextMenu from "react-native-context-menu-view";
-import {
-  requestForegroundPermissionsAsync,
-  getCurrentPositionAsync,
-} from "expo-location";
-import MapModal from "@/components/custom/MapModal";
 
 export default function TasksScreen() {
   const [tasks, setTasks] = useState<dbTask[]>([]);
   const [selectedTask, setSelectedTask] = useState<dbTask | null>(null);
   const [taskLists, setTaskLists] = useState<dbTaskList[]>([]);
-  const [selectedListId, setSelectedListId] = useState<string | null>(null);
   const [selectedList, setSelectedList] = useState<dbTaskList | null>(null);
   const [loading, setLoading] = useState(true);
   const [listsLoading, setListsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isNewListModalVisible, setIsNewListModalVisible] = useState(false);
-  const [newListName, setNewListName] = useState("");
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
-  const [userLocation, setUserLocation] = useState<UserLocation>({
-    latitude: 55.676098,
-    longitude: 12.568337,
-    latitudeDelta: 0.2,
-    longitudeDelta: 0.2,
-  });
   const [editing, setEditing] = useState<{
     taskId: string | null;
     text: string;
@@ -58,23 +43,11 @@ export default function TasksScreen() {
     text: "",
   });
 
-  // watch for changes in selectedTask
-  useEffect(() => {
-    if (selectedTask?.id) {
-      setIsMapModalVisible(true);
-    }
-  }, [selectedTask]);
-
-  // Ask for location permission on map modal open
-  useEffect(() => {
-    getUserLocation();
-  }, [isMapModalVisible]);
-
   // Fetch task lists from Firestore
   useEffect(() => {
     try {
       setListsLoading(true);
-      api.fetchTaskLists(setTaskLists, selectedListId, setSelectedListId);
+      api.fetchTaskLists(setTaskLists, selectedList, setSelectedList);
     } catch (err) {
       console.error("Error fetching task lists:", err);
     } finally {
@@ -86,39 +59,15 @@ export default function TasksScreen() {
   useEffect(() => {
     try {
       setLoading(true);
-      api.fetchTasks(setTasks, selectedListId);
+      api.fetchTasks(setTasks, selectedList);
     } catch (err) {
       console.error("Error fetching tasks:", err);
     } finally {
       setLoading(false);
     }
-  }, [selectedListId]);
+  }, [selectedList]);
 
-  // Function to get user location
-  // Using expo-location
-  const getUserLocation = async () => {
-    let { status } = await requestForegroundPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission Denied",
-        "Permission to access location was denied"
-      );
-      return;
-    }
-
-    try {
-      let location = await getCurrentPositionAsync();
-      setUserLocation({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        latitudeDelta: 0.0922,
-        longitudeDelta: 0.0421,
-      });
-    } catch (error) {
-      console.error("Error getting location:", error);
-      Alert.alert("Error", "Could not get your current location");
-    }
-  };
+  
 
   // Toggle task completion status
   const toggleTaskCompletion = async (
@@ -136,41 +85,6 @@ export default function TasksScreen() {
     );
   };
 
-  // // Toggle task location
-  // const updateTaskLocation = async (taskId: string, marker: TaskMarker) => {
-  //   // Update task location in Firestore
-  //   api.updateTaskLocation(taskId, marker);
-
-  //   // Get location from marker
-  //   const newLocation = {
-  //     latitude: marker.coordinate.latitude,
-  //     longitude: marker.coordinate.longitude,
-  //   };
-
-  //   // Update local state, with new location
-  //   setTasks((prevTasks) =>
-  //     prevTasks.map((task) =>
-  //       task.id === taskId
-  //         ? {
-  //             ...task,
-  //             location: newLocation,
-  //           }
-  //         : task
-  //     )
-  //   );
-
-  //   // Update selected task, with new location
-  //   // Updates location of marker in map modal
-  //   setSelectedTask((prev) =>
-  //     prev && prev.id === taskId
-  //       ? {
-  //           ...prev,
-  //           location: newLocation,
-  //         }
-  //       : prev
-  //   );
-  // };
-
   // Create a new task
   const createNewTask = async () => {
     try {
@@ -179,7 +93,7 @@ export default function TasksScreen() {
         title: "",
         completed: false,
         createdAt: serverTimestamp(),
-        listId: selectedListId,
+        listId: selectedList?.id,
         location: null,
       };
 
@@ -263,84 +177,6 @@ export default function TasksScreen() {
     } catch (err) {
       console.error("Error updating task title:", err);
       Alert.alert("Error", "Could not update task. Please try again.");
-    }
-  };
-
-  // Delete a task list
-  const deleteList = async (listId: string) => {
-    try {
-      // Remove from Firestore
-      const listRef = doc(db, "task_lists", listId);
-      await deleteDoc(listRef);
-
-      // Remove from local state
-      setTaskLists((prevLists) =>
-        prevLists.filter((list) => list.id !== listId)
-      );
-
-      // If the deleted list was selected, select another list
-      if (selectedListId === listId) {
-        const newSelectedList = taskLists.find((list) => list.id !== listId);
-        setSelectedListId(newSelectedList ? newSelectedList.id : null);
-      }
-    } catch (err) {
-      console.error("Error deleting task list:", err);
-      Alert.alert("Error", "Could not delete task list. Please try again.");
-    }
-  };
-
-  // Set up for renaming a list
-  const [renamingList, setRenamingList] = useState<dbTaskList | null>(null);
-  const [newName, setNewName] = useState("");
-
-  // Show rename dialog
-  const handleRenameList = (list: dbTaskList) => {
-    // Store the specific list ID we want to rename
-    const listIdToRename = list.id;
-    const currentListName = list.name;
-
-    Alert.prompt(
-      "Rename List",
-      "Enter a new name for the list:",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Rename",
-          onPress: (value) => {
-            if (value && value.trim()) {
-              // Pass the specific list ID to ensure we rename the right list
-              renameTaskList(listIdToRename, value.trim());
-            }
-          },
-        },
-      ],
-      "plain-text",
-      currentListName
-    );
-  };
-
-  // Rename a task list
-  const renameTaskList = async (listId: string, newName: string) => {
-    try {
-      console.log(`Renaming list ${listId} to "${newName}"`);
-
-      const listRef = doc(db, "task_lists", listId);
-      await updateDoc(listRef, {
-        name: newName,
-      });
-
-      // Update local state with the specific list ID
-      setTaskLists((prevLists) =>
-        prevLists.map((list) =>
-          list.id === listId ? { ...list, name: newName } : list
-        )
-      );
-    } catch (err) {
-      console.error("Error renaming task list:", err);
-      Alert.alert("Error", "Could not rename task list. Please try again.");
     }
   };
 
@@ -502,12 +338,9 @@ export default function TasksScreen() {
         <HorizontalListScroll
           taskLists={taskLists}
           setTaskLists={setTaskLists}
-          selectedListId={selectedListId}
-          setSelectedListId={setSelectedListId}
-          setIsMapModalVisible={setIsMapModalVisible}
-          onRenameList={handleRenameList}
-          onDeleteList={deleteList}
+          selectedList={selectedList}
           setSelectedList={setSelectedList}
+          setIsMapModalVisible={setIsMapModalVisible}
         />
 
         {/* Loading state for tasks */}

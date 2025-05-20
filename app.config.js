@@ -75,6 +75,12 @@ export default {
     ]
   },
   plugins: [
+    [
+    "expo-location",
+    {
+      "locationAlwaysAndWhenInUserPermission": "Allow $(PRODUCT_NAME) to use your location even when you are not using the app",
+    },
+    ],
     "expo-router",
     "expo-secure-store",
     [

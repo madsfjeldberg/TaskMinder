@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Modal, View, Text, TouchableOpacity, StyleSheet, StatusBar, Platform } from "react-native";
-import MapView, { Marker } from "react-native-maps";
+import MapView, { Circle, Marker } from "react-native-maps";
 import { MapModalProps } from "@/types/types";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -75,12 +75,24 @@ export default function MapModal({
           >
             {/* Show the task marker if it exists */}
             {currentMarker && (
+              <>
               <Marker
                 coordinate={{
                   latitude: currentMarker.latitude,
                   longitude: currentMarker.longitude,
                 }}
               />
+              <Circle
+                center={{
+                  latitude: currentMarker.latitude,
+                  longitude: currentMarker.longitude,
+                }}
+                radius={100}
+                strokeWidth={1}
+                strokeColor="rgba(0, 122, 255, 0.5)"
+                fillColor="rgba(0, 122, 255, 0.2)"
+                />
+                </>
             )}
           </MapView>
         </View>

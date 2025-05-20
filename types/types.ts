@@ -10,7 +10,6 @@ type dbTask = {
   } | null;
 };
 
-// List interface
 type dbTaskList = {
   id: string;
   name: string;
@@ -22,12 +21,9 @@ type dbTaskList = {
 type HorizontalScrollListProps = {
   taskLists: dbTaskList[];
   setTaskLists: (lists: dbTaskList[]) => void;
-  selectedListId: string | null;
-  setSelectedListId: (listId: string | null) => void;
+  selectedList: dbTaskList | null;
+  setSelectedList: (list: dbTaskList | null) => void;
   setIsMapModalVisible: (visible: boolean) => void;
-  onRenameList: (list: dbTaskList) => void;
-  onDeleteList: (listId: string) => void;
-  setSelectedList: (list: dbTaskList) => void;
 };
 
 type TaskListProps = {
@@ -76,7 +72,7 @@ type UserLocation = {
   longitude: number;
   latitudeDelta: number;
   longitudeDelta: number;
-};
+} | undefined;
 
 type ListLocation = {
   latitude: number;
