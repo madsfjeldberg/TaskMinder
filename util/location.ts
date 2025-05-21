@@ -27,4 +27,16 @@ const getUserLocation = async (): Promise<UserLocation> => {
   }
 };
 
-export { getUserLocation };
+const periodicLocationUpdate = async () => {
+  const location = await getUserLocation();
+  if (location) {
+    // Handle the location update (e.g., send to server, update state, etc.)
+    console.log("Location updated:", location);
+  } else {
+    console.error("Failed to get location");
+  }
+  // Schedule the next update
+  setTimeout(periodicLocationUpdate, 60000); // Update every minute
+};
+
+export { getUserLocation, periodicLocationUpdate };

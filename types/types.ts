@@ -1,6 +1,6 @@
 import { ListRenderItem } from "react-native";
 
-type dbTask = {
+type Task = {
   id: string;
   title: string;
   completed: boolean;
@@ -10,7 +10,7 @@ type dbTask = {
   } | null;
 };
 
-type dbTaskList = {
+type List = {
   id: string;
   name: string;
   createdAt: Date;
@@ -19,22 +19,26 @@ type dbTaskList = {
 };
 
 type HorizontalScrollListProps = {
-  taskLists: dbTaskList[];
-  setTaskLists: (lists: dbTaskList[]) => void;
-  selectedList: dbTaskList | null;
-  setSelectedList: (list: dbTaskList | null) => void;
+  taskLists: List[];
+  setTaskLists: (lists: List[]) => void;
+  selectedList: List | null;
+  setSelectedList: (list: List | null) => void;
   setIsMapModalVisible: (visible: boolean) => void;
 };
 
 type TaskListProps = {
-  tasks: dbTask[];
+  tasks: Task[];
+  setTasks: (tasks: Task[]) => void;
   editing: {
     taskId: string | null;
     text: string;
   };
+  setEditing: (editing: {
+    taskId: string | null;
+    text: string;
+  }) => void;
   saveTaskTitle: (id: string) => void;
   createNewTask: () => void;
-  renderTask: ListRenderItem<dbTask>;
 };
 
 type NewListModalProps = {
@@ -82,8 +86,8 @@ type ListLocation = {
 };
 
 export type {
-  dbTask,
-  dbTaskList,
+  Task,
+  List,
   TaskListProps,
   HorizontalScrollListProps,
   NewListModalProps,

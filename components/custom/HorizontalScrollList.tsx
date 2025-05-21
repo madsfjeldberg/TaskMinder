@@ -8,7 +8,7 @@ import {
   Platform,
   Alert,
 } from "react-native";
-import { HorizontalScrollListProps, dbTaskList, UserLocation, ListMarker } from "@/types/types";
+import { HorizontalScrollListProps, List, UserLocation, ListMarker } from "@/types/types";
 import ContextMenu from "react-native-context-menu-view";
 import NewListModal from "./NewListModal";
 import { db, auth } from "@/database/firebase";
@@ -69,14 +69,14 @@ export default function HorizontalScrollList({
         });
   
         // Add to local state
-        const newList: dbTaskList = {
+        const newList: List = {
           id: docRef.id,
           name: newListName.trim(),
           createdAt: new Date(),
           userId: currentUser.uid,
           location: null,
         };
-  
+        
         setTaskLists([...taskLists, newList]);
         setSelectedList(newList);
         setNewListName("");
@@ -88,7 +88,7 @@ export default function HorizontalScrollList({
     };
 
   // Render task list item
-    const renderListItem = (list: dbTaskList) => {
+    const renderListItem = (list: List) => {
       const isSelected = selectedList?.id === list.id;
   
       return (
@@ -133,7 +133,7 @@ export default function HorizontalScrollList({
     };
   
   // Show rename dialog
-    const handleRenameList = (list: dbTaskList) => {
+    const handleRenameList = (list: List) => {
       // Store the specific list ID we want to rename
       const listIdToRename = list.id;
       const currentListName = list.name;
@@ -183,7 +183,7 @@ export default function HorizontalScrollList({
       }
     };
 
-  const updateListLocation = async (list: dbTaskList, marker: ListMarker) => {
+  const updateListLocation = async (list: List, marker: ListMarker) => {
     let listId = list.id;
     api.updateListLocation(listId, marker);
 
@@ -231,7 +231,7 @@ export default function HorizontalScrollList({
   ];
 
   // New renderListWithContextMenu function
-  const renderListWithContextMenu = (list: dbTaskList, index: number) => {
+  const renderListWithContextMenu = (list: List, index: number) => {
     return (
       <View key={`list_${list.id}_${index}`}>
         <ContextMenu

@@ -20,17 +20,18 @@ import {
 import { db } from "@/database/firebase";
 import { Feather } from "@expo/vector-icons";
 import TaskList from "@/components/custom/TaskList";
-import { dbTask, dbTaskList, UserLocation } from "@/types/types";
+import { Task, List } from "@/types/types";
 import HorizontalListScroll from "@/components/custom/HorizontalScrollList";
-import * as api from "@/database/api";
+import api from "@/database/api";
 import { MenuProvider } from "react-native-popup-menu";
 import ContextMenu from "react-native-context-menu-view";
 
 export default function TasksScreen() {
-  const [tasks, setTasks] = useState<dbTask[]>([]);
-  const [selectedTask, setSelectedTask] = useState<dbTask | null>(null);
-  const [taskLists, setTaskLists] = useState<dbTaskList[]>([]);
-  const [selectedList, setSelectedList] = useState<dbTaskList | null>(null);
+
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [taskLists, setTaskLists] = useState<List[]>([]);
+  const [selectedList, setSelectedList] = useState<List | null>(null);
   const [loading, setLoading] = useState(true);
   const [listsLoading, setListsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,45 +46,51 @@ export default function TasksScreen() {
 
   // Fetch task lists from Firestore
   useEffect(() => {
-    try {
-      setListsLoading(true);
-      api.fetchTaskLists(setTaskLists, selectedList, setSelectedList);
-    } catch (err) {
-      console.error("Error fetching task lists:", err);
+    const fetchTaskLists = async () => {
+      let lists = await api.fetchTaskLists(selectedList) || [];
+      
+      try {
+        setListsLoading(true);
+        setTaskLists(lists);
+        // Set the first list as selected if none is selected
+        if (!selectedList) {
+          setSelectedList(lists[0] || null);
+        }
+      } catch (err) {
+        console.error("Error fetching task lists:", err);
     } finally {
       setListsLoading(false);
-    }
-  }, []);
-
-  // Fetch tasks from Firestore, filtered by selected list
-  useEffect(() => {
-    try {
-      setLoading(true);
-      api.fetchTasks(setTasks, selectedList);
-    } catch (err) {
-      console.error("Error fetching tasks:", err);
-    } finally {
       setLoading(false);
     }
+    };
+    fetchTaskLists();
+  }, []);
+
+  // // Fetch tasks from Firestore, filtered by selected list
+  useEffect(() => {
+    if (!selectedList) {
+      return;
+    }
+
+    const fetchTasks = async () => {
+      let tasks = await api.fetchTasks(selectedList);
+
+      try {
+        setLoading(true);
+        setTasks(tasks ?? []);
+      } catch (err) {
+        console.error("Error fetching tasks:", err);
+        setError("Failed to fetch tasks. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTasks();
   }, [selectedList]);
 
   
 
-  // Toggle task completion status
-  const toggleTaskCompletion = async (
-    taskId: string,
-    currentStatus: boolean
-  ) => {
-    // Update task completion status in Firestore
-    api.updateTaskCompletion(taskId, currentStatus);
-
-    // Update local state
-    setTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === taskId ? { ...task, completed: !currentStatus } : task
-      )
-    );
-  };
+  
 
   // Create a new task
   const createNewTask = async () => {
@@ -101,7 +108,7 @@ export default function TasksScreen() {
       const docRef = await addDoc(collection(db, "tasks"), newTask);
 
       // Add to local state
-      const taskWithId: dbTask = {
+      const taskWithId: Task = {
         id: docRef.id,
         title: newTask.title,
         completed: newTask.completed,
@@ -121,40 +128,40 @@ export default function TasksScreen() {
     }
   };
 
-  // Delete a task
-  const deleteTask = async (taskId: string) => {
-    try {
-      // Remove from Firestore
-      const taskRef = doc(db, "tasks", taskId);
-      await deleteDoc(taskRef);
+  // // Delete a task
+  // const deleteTask = async (taskId: string) => {
+  //   try {
+  //     // Remove from Firestore
+  //     const taskRef = doc(db, "tasks", taskId);
+  //     await deleteDoc(taskRef);
 
-      // Remove from local state
-      setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+  //     // Remove from local state
+  //     setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
 
-      // Reset editing state if needed
-      if (editing.taskId === taskId) {
-        setEditing({
-          taskId: null,
-          text: "",
-        });
-      }
-    } catch (err) {
-      console.error("Error deleting task:", err);
-      Alert.alert("Error", "Could not delete task. Please try again.");
-    }
-  };
+  //     // Reset editing state if needed
+  //     if (editing.taskId === taskId) {
+  //       setEditing({
+  //         taskId: null,
+  //         text: "",
+  //       });
+  //     }
+  //   } catch (err) {
+  //     console.error("Error deleting task:", err);
+  //     Alert.alert("Error", "Could not delete task. Please try again.");
+  //   }
+  // };
 
   // Save task after editing
   const saveTaskTitle = async (taskId: string) => {
-    if (!editing.text.trim()) {
-      // If empty, delete the task
-      try {
-        await deleteTask(taskId);
-      } catch (err) {
-        console.error("Error deleting empty task:", err);
-      }
-      return;
-    }
+    // if (!editing.text.trim()) {
+    //   // If empty, delete the task
+    //   try {
+    //     await deleteTask(taskId);
+    //   } catch (err) {
+    //     console.error("Error deleting empty task:", err);
+    //   }
+    //   return;
+    // }
 
     try {
       const taskRef = doc(db, "tasks", taskId);
@@ -180,123 +187,6 @@ export default function TasksScreen() {
     }
   };
 
-  const TASK_MENU_ACTIONS = [
-    {
-      title: "Edit",
-      systemIcon: Platform.OS === "ios" ? "square.and.pencil" : undefined,
-      id: Platform.OS === "android" ? "edit" : undefined,
-      destructive: false,
-    },
-    {
-      title: "Set Location",
-      systemIcon: Platform.OS === "ios" ? "location" : undefined,
-      id: Platform.OS === "android" ? "set_location" : undefined,
-      destructive: false,
-    },
-    {
-      title: "Delete",
-      systemIcon: Platform.OS === "ios" ? "trash" : undefined,
-      id: Platform.OS === "android" ? "delete" : undefined,
-      destructive: true,
-    },
-  ];
-
-  // Render each task item
-  const renderTask = ({ item }: { item: dbTask }) => {
-    const isEditing = item.id === editing.taskId;
-
-    // Define menu actions
-    const menuActions = TASK_MENU_ACTIONS;
-
-    return (
-      <ContextMenu
-        actions={menuActions}
-        onPress={(e) => {
-          // Handle menu action selection
-          if (e.nativeEvent.index === 0) {
-            // Edit action
-            setEditing({
-              taskId: item.id,
-              text: item.title,
-            });
-          } else if (e.nativeEvent.index === 1) {
-            // Set Location action
-            setSelectedTask(item);
-            setEditing({
-              taskId: item.id,
-              text: item.title,
-            });
-          } else if (e.nativeEvent.index === 2) {
-            // Delete action
-            Alert.alert(
-              "Delete Task",
-              "Are you sure you want to delete this task?",
-              [
-                {
-                  text: "Cancel",
-                  style: "cancel",
-                },
-                {
-                  text: "Delete",
-                  onPress: () => deleteTask(item.id),
-                  style: "destructive",
-                },
-              ]
-            );
-          }
-        }}
-        previewBackgroundColor="#f9f9f9"
-      >
-        <TouchableOpacity
-          style={styles.taskItem}
-          onPress={() => {
-            if (!isEditing) {
-              toggleTaskCompletion(item.id, item.completed);
-            }
-          }}
-        >
-          <View style={styles.taskContent}>
-            <View style={styles.taskHeader}>
-              {!isEditing && (
-                <TouchableOpacity
-                  style={styles.checkboxContainer}
-                  onPress={() => toggleTaskCompletion(item.id, item.completed)}
-                >
-                  {item.completed ? (
-                    <Feather name="check-square" size={24} color="#3498db" />
-                  ) : (
-                    <Feather name="square" size={24} color="#3498db" />
-                  )}
-                </TouchableOpacity>
-              )}
-
-              {isEditing ? (
-                <TextInput
-                  style={styles.taskTitleInput}
-                  value={editing.text}
-                  onChangeText={(text) => setEditing({ ...editing, text })}
-                  placeholder="Enter task name..."
-                  autoFocus
-                  onBlur={() => saveTaskTitle(item.id)}
-                  onSubmitEditing={() => saveTaskTitle(item.id)}
-                />
-              ) : (
-                <Text
-                  style={[
-                    styles.taskTitle,
-                    item.completed && styles.completedTaskText,
-                  ]}
-                >
-                  {item.title}
-                </Text>
-              )}
-            </View>
-          </View>
-        </TouchableOpacity>
-      </ContextMenu>
-    );
-  };
-
   // Loading state during initial list fetch
   if (listsLoading) {
     return (
@@ -306,29 +196,6 @@ export default function TasksScreen() {
       </View>
     );
   }
-
-  // // No lists state
-  // if (taskLists.length === 0) {
-  //   return (
-  //     <View style={styles.container}>
-  //       <View style={styles.centeredContainer}>
-  //         <Feather name="list" size={64} color="#ccc" />
-  //         <Text style={styles.emptyStateText}>No Task Lists</Text>
-  //         <Text style={styles.emptyStateSubText}>
-  //           Create your first task list to get started
-  //         </Text>
-
-  //         <TouchableOpacity
-  //           style={styles.createListButton}
-  //           onPress={() => setIsNewListModalVisible(true)}
-  //         >
-  //           <Text style={styles.createListButtonText}>Create First List</Text>
-  //         </TouchableOpacity>
-  //       </View>
-
-  //     </View>
-  //   );
-  // }
 
   {/* MAIN RENDER */}
   return (
@@ -384,10 +251,11 @@ export default function TasksScreen() {
           // Task list
           <TaskList
             tasks={tasks}
+            setTasks={setTasks}
             editing={editing}
+            setEditing={setEditing}
             saveTaskTitle={saveTaskTitle}
             createNewTask={createNewTask}
-            renderTask={renderTask}
           />
         )}
 
@@ -467,47 +335,5 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
-  },
-  taskItem: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  taskContent: {
-    flex: 1,
-  },
-  taskHeader: {
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  taskTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
-    flex: 1,
-    marginLeft: 12,
-  },
-  taskTitleInput: {
-    fontSize: 18,
-    flex: 1,
-    marginLeft: 12,
-    padding: 0,
-    borderBottomWidth: 1,
-    borderBottomColor: "#3498db",
-  },
-  completedTaskText: {
-    textDecorationLine: "line-through",
-    color: "#aaa",
-  },
-  checkboxContainer: {
-    marginRight: 0,
   },
 });

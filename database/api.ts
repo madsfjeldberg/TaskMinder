@@ -1,4 +1,4 @@
-import { dbTask, dbTaskList, TaskMarker } from "@/types/types";
+import { Task, List, TaskMarker } from "@/types/types";
 import { db } from "./firebase";
 import {
   doc,
@@ -7,9 +7,6 @@ import {
   where,
   collection,
   getDocs,
-  orderBy,
-  onSnapshot,
-  deleteDoc,
 } from "firebase/firestore";
 import { auth } from "./firebase";
 
@@ -25,10 +22,8 @@ const handleFirebaseOperation = async (
   }
 };
 
-export const fetchTaskLists = (
-  setTaskLists: (lists: dbTaskList[]) => void,
-  selectedList: dbTaskList | null,
-  setSelectedList: (list: dbTaskList | null) => void
+export const fetchTaskLists = async (
+  selectedList: List | null,
 ) => {
   const currentUser = auth.currentUser;
   if (!currentUser) {
@@ -42,51 +37,27 @@ export const fetchTaskLists = (
     where("userId", "==", currentUser.uid)
   );
 
-  // Set up real-time listener
-  const unsubscribe = onSnapshot(q, (snapshot) => {
-    const lists: dbTaskList[] = [];
-    const uniqueIds = new Set<string>();
-
-    snapshot.forEach((doc) => {
-      const docId = doc.id;
-
-      // Only add if we haven't seen this ID before
-      if (!uniqueIds.has(docId)) {
-        uniqueIds.add(docId);
-        const data = doc.data();
-        lists.push({
-          id: docId,
-          name: data.name,
-          createdAt: data.createdAt?.toDate() || new Date(),
-          userId: data.userId,
-          location: data.location || null,
-        });
-      } else {
-        console.warn(`Duplicate task list ID found: ${docId}`);
-      }
-    });
-
-    // Sort lists by creation date after fetching
-    lists.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-    setTaskLists(lists);
-
-    // If no list is selected and we have lists, select the first one
-    if (!selectedList && lists.length > 0) {
-      setSelectedList(lists[0]);
-    }
+  // Execute the query
+  const querySnapshot = await getDocs(q);
+  const lists: List[] = querySnapshot.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      name: data.name,
+      createdAt: data.createdAt?.toDate() || new Date(),
+      userId: data.userId,
+      location: data.location || null,
+    };
   });
 
-  // Return unsubscribe function
-  return unsubscribe;
+  return lists;
 };
 
 export const fetchTasks = async (
-  setTasks: (tasks: dbTask[]) => void,
-  selectedList: dbTaskList | null
+  selectedList: List | null
 ) => {
-  handleFirebaseOperation(async () => {
     // Create a query against the tasks collection, filtered by list ID
+    console.log("Fetching tasks for list ID:", selectedList?.id);
     const tasksQuery = query(
       collection(db, "tasks"),
       where("listId", "==", selectedList?.id)
@@ -96,7 +67,7 @@ export const fetchTasks = async (
     const querySnapshot = await getDocs(tasksQuery);
 
     // Map the documents to our Task interface
-    const tasksList: dbTask[] = querySnapshot.docs.map((doc) => {
+    const tasksList: Task[] = querySnapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         id: doc.id,
@@ -106,8 +77,7 @@ export const fetchTasks = async (
       };
     });
 
-    setTasks(tasksList);
-  }, "Error fetching tasks:");
+    return tasksList;
 };
 
 export const updateTaskCompletion = async (
@@ -151,3 +121,14 @@ export const updateListLocation = async(
     });
   }, "Error updating list location:");
 }
+
+
+const api = {
+  fetchTaskLists,
+  fetchTasks,
+  updateTaskCompletion,
+  updateTaskLocation,
+  updateListLocation,
+}
+
+export default api;
