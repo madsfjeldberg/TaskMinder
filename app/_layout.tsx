@@ -5,7 +5,7 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { Stack, useRouter, useRootNavigation, Slot } from "expo-router";
+import { useRouter, Slot } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
@@ -16,11 +16,7 @@ import "react-native-gesture-handler";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useAuth } from "@/hooks/useAuth";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-
-import { Session } from "@supabase/supabase-js";
-import { supabase } from "@/database/supabase";
-import Auth from "@/components/custom/Auth";
-import { HoldMenuProvider } from "react-native-hold-menu";
+import { periodicLocationUpdate } from "@/util/location";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -33,26 +29,15 @@ export default function RootLayout() {
 
   const { user, loading } = useAuth();
   const router = useRouter();
-  const rootNavigation = useRootNavigation();
-  const [session, setSession] = React.useState<Session | null>(null);
   
-
   useEffect(() => {
       if (loaded) {
         SplashScreen.hideAsync();
-  
-        supabase.auth.getSession().then(({ data: { session } }) => {
-        setSession(session)
-      })
-      supabase.auth.onAuthStateChange((_event, session) => {
-        setSession(session)
-      })
+        periodicLocationUpdate();
       }
     }, [loaded]);
 
   useEffect(() => {
-    if (loading || !rootNavigation?.isReady()) return;
-
     // If we can't go back, we're at the root
     const isRoot = !router.canGoBack();
 
@@ -63,7 +48,7 @@ export default function RootLayout() {
       // Redirect away from the sign-in page.
       router.replace("/tasks");
     }
-  }, [user, loading, router, rootNavigation]);
+  }, [user, loading, router]);
 
   if (!loaded || loading) {
     return (
@@ -84,14 +69,12 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView>
-    <SafeAreaProvider>
+      <SafeAreaProvider>
         <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-          <HoldMenuProvider theme="light" safeAreaInsets={{ top: 50, bottom: 50, left: 50, right: 50 }}>
             <Slot />
-            </HoldMenuProvider>
-        <StatusBar style="auto" />
-      </ThemeProvider>
+          <StatusBar style="auto" />
+        </ThemeProvider>
       </SafeAreaProvider>
-      </GestureHandlerRootView>
+    </GestureHandlerRootView>
   );
 }

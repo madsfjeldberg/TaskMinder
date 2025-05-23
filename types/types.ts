@@ -57,11 +57,13 @@ type NewListModalProps = {
 };
 
 type EditListModalProps = {
+  taskLists: List[];
+  setTaskLists: (lists: List[]) => void;
+  selectedList: List | null;
+  setSelectedList: (list: List | null) => void;
   visible: boolean;
+  setVisible: (visible: boolean) => void;
   onClose: () => void;
-  onEditList: () => void;
-  newListName: string;
-  setNewListName: (name: string) => void;
   setIsMapModalVisible: (visible: boolean) => void;
 }
 

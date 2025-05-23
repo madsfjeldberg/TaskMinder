@@ -83,7 +83,8 @@ const fetchTasks = async (
   return tasks;
 };
 
-const updateList = async ( list: List ) => {
+const updateList = async (list: List) => {
+  console.log("Updating list:", list);
   const { data, error } = await supabase
     .from("task_lists")
     .update({

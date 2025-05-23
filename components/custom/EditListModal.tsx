@@ -7,18 +7,66 @@ import {
   TextInput,
   TouchableOpacity,
   Modal,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  Alert,
 } from "react-native";
 import { EditListModalProps } from "@/types/types";
+import { List } from "@/types/types";
+import api from "@/database/api";
+
 
 export default function EditListModal({
+  taskLists,
+  setTaskLists,
+  selectedList,
+  setSelectedList,
   visible,
+  setVisible,
   onClose,
-  onEditList,
-  newListName,
-  setNewListName,
   setIsMapModalVisible
 }: EditListModalProps) {
+
+  const [newListName, setNewListName] = React.useState(selectedList?.name || "");
+
+  const openMapModal = () => {
+    setVisible(false);
+    setIsMapModalVisible(true);
+  };
+
+  const handleEditList = async () => {
+    if (!newListName.trim()) {
+      Alert.alert("Error", "Please enter a list name");
+      return;
+    }
+    if (!selectedList) {
+      Alert.alert("Error", "No list selected");
+      return;
+    }
+    selectedList.name = newListName.trim();
+
+    const updatedList = await api.updateList({
+      ...selectedList,
+      name: newListName.trim(),
+    });
+    if (!updatedList) {
+      Alert.alert("Error", "Failed to update list. Please try again.");
+      return;
+    }
+  
+    // Update local state
+    const updatedTaskLists = taskLists.map((taskList) => {
+      if (taskList.id === selectedList.id) {
+        return { ...taskList, name: newListName.trim() };
+      }
+      return taskList;
+    });
+  
+    setTaskLists(updatedTaskLists);
+    setSelectedList(selectedList);
+    setNewListName("");
+    setVisible(false);
+
+  };
 
   return (
     <Modal
@@ -39,7 +87,8 @@ export default function EditListModal({
           autoFocus
         />
 
-        <View style={styles.modalButtons}>
+          <View style={styles.modalButtons}>
+            {/* Cancel Button */}
           <TouchableOpacity
             style={[styles.modalButton, styles.cancelButton]}
             onPress={onClose}
@@ -47,15 +96,17 @@ export default function EditListModal({
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
 
+            {/* Open Map Modal */}
           <TouchableOpacity
             style={[styles.modalButton, styles.createButton]}
-            onPress={() => setIsMapModalVisible(true)}
+            onPress={() => openMapModal()}
           >
             <Text style={styles.createButtonText}>Location</Text>
             </TouchableOpacity>
+            {/* Update List */}
             <TouchableOpacity
             style={[styles.modalButton, styles.createButton]}
-            onPress={onEditList}
+            onPress={handleEditList}
           >
             <Text style={styles.createButtonText}>Update</Text>
           </TouchableOpacity>
@@ -65,9 +116,6 @@ export default function EditListModal({
     </Modal>
   );
 }
-
-
-
 
 const styles = StyleSheet.create({
   modal: {
@@ -115,7 +163,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
-    minWidth: 100,
+    minWidth: 60,
     alignItems: "center",
   },
   cancelButton: {

@@ -81,7 +81,7 @@ export default {
     [
     "expo-location",
     {
-      "locationAlwaysAndWhenInUserPermission": "Allow $(PRODUCT_NAME) to use your location even when you are not using the app",
+      "locationAlwaysAndWhenInUserPermission": "Allow TaskMinder to use your location even when you are not using the app",
     },
     ],
     "expo-router",

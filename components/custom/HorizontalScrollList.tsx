@@ -74,7 +74,7 @@ export default function HorizontalScrollList({
       setIsNewListModalVisible(false);
     };
   
-  const handleEditList = async () => { }
+  
   
 
 
@@ -89,6 +89,7 @@ export default function HorizontalScrollList({
             style={[styles.listItem, isSelected && styles.isSelectedListItem]}
             onPress={() => setSelectedList(list)}
             onLongPress={() => {
+              setSelectedList(list);
               setIsEditListModalVisible(true);
               setNewListName(list.name);
             }}
@@ -127,36 +128,7 @@ export default function HorizontalScrollList({
   //       Alert.alert("Error", "Could not delete task list. Please try again.");
   //     }
   //   };
-  
-  // // Show rename dialog
-  //   const handleRenameList = (list: List) => {
-  //     // Store the specific list ID we want to rename
-  //     const listIdToRename = list.id;
-  //     const currentListName = list.name;
-  
-  //     Alert.prompt(
-  //       "Rename List",
-  //       "Enter a new name for the list:",
-  //       [
-  //         {
-  //           text: "Cancel",
-  //           style: "cancel",
-  //         },
-  //         {
-  //           text: "Rename",
-  //           onPress: (value) => {
-  //             if (value && value.trim()) {
-  //               // Pass the specific list ID to ensure we rename the right list
-  //               renameTaskList(listIdToRename, value.trim());
-  //             }
-  //           },
-  //         },
-  //       ],
-  //       "plain-text",
-  //       currentListName
-  //     );
-  //   };
-  
+    
   // // Rename a task list
   //   const renameTaskList = async (listId: string, newName: string) => {
   //     try {
@@ -181,7 +153,30 @@ export default function HorizontalScrollList({
 
   const updateListLocation = async (list: List, marker: ListMarker) => {
     let listId = list.id;
-    api.updateListLocation(listId, marker);
+    list.location = {
+      latitude: marker.coordinate.latitude,
+      longitude: marker.coordinate.longitude,
+      latitudeDelta: 0.2,
+      longitudeDelta: 0.2,
+    };
+
+    const updatedList = await api.updateList(list);
+
+    let updatedTaskLists = taskLists.map((taskList) => {
+      if (taskList.id === listId) {
+        return {
+          ...taskList,
+          location: {
+            latitude: marker.coordinate.latitude,
+            longitude: marker.coordinate.longitude,
+            latitudeDelta: 0.2,
+            longitudeDelta: 0.2,
+          },
+        };
+      }
+      return taskList;
+    });
+    setTaskLists(updatedTaskLists);
 
     const newLocation = {
       latitude: marker.coordinate.latitude,
@@ -190,14 +185,6 @@ export default function HorizontalScrollList({
       longitudeDelta: 0.2,
     };
 
-    setTaskLists(
-    taskLists.map((list) =>
-      list.id === listId
-        ? { ...list, location: newLocation }
-        : list
-      )
-    );
-
     if (selectedList && selectedList.id === listId) {
       setSelectedList({ ...selectedList, location: newLocation });
     }
@@ -205,7 +192,7 @@ export default function HorizontalScrollList({
   };
   
   // New renderListWithContextMenu function
-  const renderListWithContextMenu = (list: List, index: number) => {
+  const renderList = (list: List, index: number) => {
     return (
       <View key={`list_${list.id}_${index}`}>
         {renderListItem(list)}
@@ -223,7 +210,7 @@ export default function HorizontalScrollList({
         {/* Check for duplicate IDs and render uniquely */}
         {taskLists.map((list, index) => {
           // Use unique compound key with index fallback
-          return renderListWithContextMenu(list, index);
+          return renderList(list, index);
         })}
 
         <TouchableOpacity
@@ -255,11 +242,13 @@ export default function HorizontalScrollList({
       />
 
       <EditListModal
+        taskLists={taskLists}
+        setTaskLists={setTaskLists}
+        selectedList={selectedList}
+        setSelectedList={setSelectedList}
         visible={isEditListModalVisible}
+        setVisible={setIsEditListModalVisible}
         onClose={() => setIsEditListModalVisible(false)}
-        onEditList={handleEditList}
-        newListName={newListName}
-        setNewListName={setNewListName}
         setIsMapModalVisible={setIsMapModalVisible}
       />
 

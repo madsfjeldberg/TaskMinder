@@ -1,17 +1,7 @@
-import React from "react";
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
+import React, { useEffect } from "react";
 import { useRouter } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
-import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 import { View } from "react-native";
-
-import { useColorScheme } from "@/hooks/useColorScheme";
 import { TitleBar } from "@/components/TitleBar";
 import { Feather } from "@expo/vector-icons";
 import { Drawer } from "expo-router/drawer";
@@ -21,13 +11,19 @@ import {
   DrawerContentScrollView,
 } from "@react-navigation/drawer";
 import auth from "@/database/auth";
+import { periodicLocationUpdate } from "@/util/location";
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
 
 export default function MainLayout() {
-  const colorScheme = useColorScheme();
   const router = useRouter();
+
+  useEffect(() => {
+    const locationUpdate = async () => {
+      await periodicLocationUpdate();
+    };
+    locationUpdate();
+  }, []);
+  
 
   function CustomDrawerContent(props: any) {
     return (
@@ -52,40 +48,37 @@ export default function MainLayout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Drawer
-          screenOptions={{
-            headerShown: true,
-            header: () => <TitleBar />,
-            drawerPosition: "right",
-            drawerStyle: {
-              width: 250,
-            },
+    <>
+      <Drawer
+        screenOptions={{
+          headerShown: true,
+          header: () => <TitleBar />,
+          drawerPosition: "right",
+          drawerStyle: {
+            width: 250,
+          },
+        }}
+        drawerContent={(props) => <CustomDrawerContent {...props} />}
+      >
+        <Drawer.Screen
+          name="tasks"
+          options={{
+            drawerLabel: "Tasks",
+            drawerIcon: ({ color }) => (
+              <Feather name="list" size={24} color={color} />
+            ),
           }}
-          drawerContent={(props) => <CustomDrawerContent {...props} />}
-        >
-          <Drawer.Screen
-            name="tasks"
-            options={{
-              drawerLabel: "Tasks",
-              drawerIcon: ({ color }) => (
-                <Feather name="list" size={24} color={color} />
-              ),
-            }}
-          />
-          <Drawer.Screen
-            name="settings"
-            options={{
-              drawerLabel: "Settings",
-              drawerIcon: ({ color }) => (
-                <Feather name="settings" size={24} color={color} />
-              ),
-            }}
-          />
-        </Drawer>
-        <StatusBar style="auto" />
-      </ThemeProvider>
-    </SafeAreaProvider>
+        />
+        <Drawer.Screen
+          name="settings"
+          options={{
+            drawerLabel: "Settings",
+            drawerIcon: ({ color }) => (
+              <Feather name="settings" size={24} color={color} />
+            ),
+          }}
+        />
+      </Drawer>
+    </>
   );
 }

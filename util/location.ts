@@ -1,4 +1,4 @@
-import { requestBackgroundPermissionsAsync, getCurrentPositionAsync } from "expo-location";
+import { requestForegroundPermissionsAsync, getCurrentPositionAsync } from "expo-location";
 import { Alert } from "react-native";
 import { UserLocation } from "@/types/types";
 
@@ -8,7 +8,7 @@ import { UserLocation } from "@/types/types";
  * @returns {Promise<UserLocation>} The user's location or undefined if not available.
  */
 const getUserLocation = async (): Promise<UserLocation> => {
-  let { status } = await requestBackgroundPermissionsAsync();
+  let { status } = await requestForegroundPermissionsAsync();
   if (status !== "granted") {
     throw new Error("Location permission denied");
   }
@@ -23,7 +23,6 @@ const getUserLocation = async (): Promise<UserLocation> => {
     return coords;
   } catch (error) {
     console.error("Error getting location:", error);
-    Alert.alert("Error", "Could not get your current location");
   }
 };
 
@@ -31,7 +30,6 @@ const periodicLocationUpdate = async () => {
   const location = await getUserLocation();
   if (location) {
     // Handle the location update (e.g., send to server, update state, etc.)
-    console.log("Location updated:", location);
   } else {
     console.error("Failed to get location");
   }
