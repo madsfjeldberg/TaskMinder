@@ -1,15 +1,11 @@
-import React from "react";
+import React, { useRef } from "react";
 import { FlatList } from "react-native";
 import { TouchableOpacity } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { StyleSheet } from "react-native";
 import { TaskListProps } from "@/types/types";
-import ContextMenu from "react-native-context-menu-view";
 import { Alert, Text, View, TextInput } from "react-native";
 import { Task } from "@/types/types";
-import { Platform } from "react-native";
-import { db } from "@/database/firebase";
-import { deleteDoc, doc } from "firebase/firestore";
 import api from "@/database/api";
 
 export default function TaskList({
@@ -17,111 +13,69 @@ export default function TaskList({
   setTasks,
   editing,
   setEditing,
-  saveTaskTitle,
   createNewTask,
 }: TaskListProps) {
-
-  // Delete a task
-    const deleteTask = async (taskId: string) => {
+  
+  const updateTask = async (task: Task) => {
+    if (!editing.text.trim()) {
+      // If empty, delete the task
       try {
-        // Remove from Firestore
-        const taskRef = doc(db, "tasks", taskId);
-        await deleteDoc(taskRef);
-  
-        // Remove from local state
-        setTasks([...tasks.filter((task) => task.id !== taskId)]);
-  
-        // Reset editing state if needed
-        if (editing.taskId === taskId) {
-          setEditing({
-            taskId: null,
-            text: "",
-          });
-        }
+        await api.deleteTask(task);
       } catch (err) {
-        console.error("Error deleting task:", err);
-        Alert.alert("Error", "Could not delete task. Please try again.");
+        console.error("Error deleting empty task:", err);
       }
-    };
-  
-  // Toggle task completion status
-    const toggleTaskCompletion = async (
-      taskId: string,
-      currentStatus: boolean
-    ) => {
-      // Update task completion status in Firestore
-      api.updateTaskCompletion(taskId, currentStatus);
-  
+
       // Update local state
-      setTasks([...tasks.filter((task) => task.id !== taskId)]);
-    };
+      let updatedTasks = tasks.filter((t) => t.id !== task.id);
+      setTasks(updatedTasks);
+      setEditing({
+        id: null,
+        text: "",
+      });
+      return;
+    }
+    task.name = editing.text;
 
+    await api.updateTask(task);
 
-  const TASK_MENU_ACTIONS = [
-      {
-        title: "Edit",
-        systemIcon: Platform.OS === "ios" ? "square.and.pencil" : undefined,
-        id: Platform.OS === "android" ? "edit" : undefined,
-        destructive: false,
-      },
-      {
-        title: "Set Location",
-        systemIcon: Platform.OS === "ios" ? "location" : undefined,
-        id: Platform.OS === "android" ? "set_location" : undefined,
-        destructive: false,
-      },
-      {
-        title: "Delete",
-        systemIcon: Platform.OS === "ios" ? "trash" : undefined,
-        id: Platform.OS === "android" ? "delete" : undefined,
-        destructive: true,
-      },
-    ];
+    let updatedTasks = tasks.map((t) => (t.id === task.id ? task : t));
+    setTasks(updatedTasks);
+
+    setEditing({
+      id: null,
+      text: "",
+    });
+  }
+
+  // Toggle task completion status
+  const toggleTaskCompletion = async ( task: Task ) => {
+    task.completed = !task.completed;
+    api.updateTask(task);
+
+    let updatedTasks = tasks.map((t) => (t.id === task.id ? task : t));
+    setTasks(updatedTasks);
+ 
+  };
 
   // Render each task item
     const renderTask = ({ item }: { item: Task }) => {
-      const isEditing = item.id === editing.taskId;
-  
-      // Define menu actions
-      const menuActions = TASK_MENU_ACTIONS;
+      const isEditing = item.id === editing.id;
   
       return (
-        <ContextMenu
-          actions={menuActions}
-          onPress={(e) => {
-            // Handle menu action selection
-            if (e.nativeEvent.index === 0) {
-              // Edit action
-              setEditing({
-                taskId: item.id,
-                text: item.title,
-              });
-            } else if (e.nativeEvent.index === 2) {
-              // Delete action
-              Alert.alert(
-                "Delete Task",
-                "Are you sure you want to delete this task?",
-                [
-                  {
-                    text: "Cancel",
-                    style: "cancel",
-                  },
-                  {
-                    text: "Delete",
-                    onPress: () => deleteTask(item.id),
-                    style: "destructive",
-                  },
-                ]
-              );
-            }
-          }}
-          previewBackgroundColor="#f9f9f9"
-        >
           <TouchableOpacity
             style={styles.taskItem}
             onPress={() => {
               if (!isEditing) {
-                toggleTaskCompletion(item.id, item.completed);
+                {/* open task view */ }
+                
+              }
+            }}
+            onLongPress={() => {
+              if (!isEditing) {
+                setEditing({
+                  id: item.id,
+                  text: item.name,
+                });
               }
             }}
           >
@@ -130,7 +84,7 @@ export default function TaskList({
                 {!isEditing && (
                   <TouchableOpacity
                     style={styles.checkboxContainer}
-                    onPress={() => toggleTaskCompletion(item.id, item.completed)}
+                    onPress={() => toggleTaskCompletion(item)}
                   >
                     {item.completed ? (
                       <Feather name="check-square" size={24} color="#3498db" />
@@ -147,8 +101,8 @@ export default function TaskList({
                     onChangeText={(text) => setEditing({ ...editing, text })}
                     placeholder="Enter task name..."
                     autoFocus
-                    onBlur={() => saveTaskTitle(item.id)}
-                    onSubmitEditing={() => saveTaskTitle(item.id)}
+                    onBlur={() => updateTask(item)}
+                    onSubmitEditing={() => updateTask(item)}
                   />
                 ) : (
                   <Text
@@ -157,43 +111,35 @@ export default function TaskList({
                       item.completed && styles.completedTaskText,
                     ]}
                   >
-                    {item.title}
+                    {item.name}
                   </Text>
                 )}
               </View>
             </View>
           </TouchableOpacity>
-        </ContextMenu>
       );
     };
 
   return (
-    <TouchableOpacity
-          style={{ flex: 1 }}
-          activeOpacity={1}
-          onPress={() => {
-            if (editing.taskId) {
-              saveTaskTitle(editing.taskId);
-            }
-          }}
-        >
-          <FlatList
-            data={tasks}
-            renderItem={renderTask}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContainer}
-          />
-          <TouchableOpacity
-            style={[
-              styles.addTaskButton,
-              editing.taskId && styles.addTaskButtonDisabled,
-            ]}
-            onPress={createNewTask}
-            disabled={editing.taskId !== null}
-          >
-            <Feather name="plus" size={24} color="#fff" />
-          </TouchableOpacity>
-        </TouchableOpacity>
+    <>
+      <FlatList
+        data={tasks}
+        renderItem={renderTask}
+        keyExtractor={(item) => String(item.id)}
+        contentContainerStyle={styles.listContainer}
+      />
+      {/* Add Task Button, bottom right */}
+      <TouchableOpacity
+        style={[
+          styles.addTaskButton,
+          editing.id ? styles.addTaskButtonDisabled : null,
+        ]}
+        onPress={createNewTask}
+        disabled={editing.id !== null}
+      >
+        <Feather name="plus" size={30} color="#fff" />
+      </TouchableOpacity>
+    </> 
   )
 }
 

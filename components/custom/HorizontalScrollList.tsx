@@ -5,25 +5,17 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Platform,
   Alert,
 } from "react-native";
 import { HorizontalScrollListProps, List, UserLocation, ListMarker } from "@/types/types";
-import ContextMenu from "react-native-context-menu-view";
 import NewListModal from "./NewListModal";
-import { db, auth } from "@/database/firebase";
 import { Feather } from "@expo/vector-icons";
 import { getUserLocation } from "@/util/location";
-import {
-  collection,
-  doc,
-  updateDoc,
-  addDoc,
-  serverTimestamp,
-  deleteDoc,
-} from "firebase/firestore";
 import MapModal from "./MapModal";
-import * as api from "@/database/api";
+import api from "@/database/api";
+import auth from "@/database/auth";
+import { HoldItem, HoldMenuProvider } from "react-native-hold-menu";
+import EditListModal from "./EditListModal";
 
 export default function HorizontalScrollList({
   taskLists,
@@ -39,6 +31,7 @@ export default function HorizontalScrollList({
     longitudeDelta: 0.2,
   });
   const [isNewListModalVisible, setIsNewListModalVisible] = React.useState(false);
+  const [isEditListModalVisible, setIsEditListModalVisible] = React.useState(false);
   const [isMapModalVisible, setIsMapModalVisible] = React.useState(false);
   const [newListName, setNewListName] = React.useState("");
 
@@ -56,46 +49,49 @@ export default function HorizontalScrollList({
         Alert.alert("Error", "Please enter a list name");
         return;
       }
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
+      const currentUser = await auth.getCurrentUser();
+      const userId = currentUser?.data.user?.id;
+      if (!currentUser || !userId) {
         return;
       }
-      try {
-        // Add new task list to Firestore with userId
-        const docRef = await addDoc(collection(db, "task_lists"), {
-          name: newListName.trim(),
-          createdAt: serverTimestamp(),
-          userId: currentUser.uid,
-        });
-  
-        // Add to local state
-        const newList: List = {
-          id: docRef.id,
-          name: newListName.trim(),
-          createdAt: new Date(),
-          userId: currentUser.uid,
-          location: null,
-        };
-        
-        setTaskLists([...taskLists, newList]);
-        setSelectedList(newList);
-        setNewListName("");
-        setIsNewListModalVisible(false);
-      } catch (err) {
-        console.error("Error creating new task list:", err);
+      const response = await api.createList(newListName, userId, null);
+      if (!response) {
         Alert.alert("Error", "Failed to create new list. Please try again.");
+        return;
       }
+  
+      // Add to local state
+      const newList: List = {
+        id: response[0].id,
+        name: newListName.trim(),
+        userId: userId,
+        location: null,
+      };
+      
+      setTaskLists([...taskLists, newList]);
+      setSelectedList(newList);
+      setNewListName("");
+      setIsNewListModalVisible(false);
     };
+  
+  const handleEditList = async () => { }
+  
+
 
   // Render task list item
     const renderListItem = (list: List) => {
       const isSelected = selectedList?.id === list.id;
   
       return (
+        
         <View key={list.id}>
           <TouchableOpacity
             style={[styles.listItem, isSelected && styles.isSelectedListItem]}
             onPress={() => setSelectedList(list)}
+            onLongPress={() => {
+              setIsEditListModalVisible(true);
+              setNewListName(list.name);
+            }}
           >
             <Text
               style={[
@@ -105,83 +101,83 @@ export default function HorizontalScrollList({
             >
               {list.name}
             </Text>
-          </TouchableOpacity>
-        </View>
+            </TouchableOpacity>
+          </View>
       );
     };
   
-  // Delete a task list
-    const deleteList = async (listId: string) => {
-      try {
-        // Remove from Firestore
-        const listRef = doc(db, "task_lists", listId);
-        await deleteDoc(listRef);
+  // // Delete a task list
+  //   const deleteList = async (listId: string) => {
+  //     try {
+  //       // Remove from Firestore
+  //       const listRef = doc(db, "task_lists", listId);
+  //       await deleteDoc(listRef);
   
-        // Remove from local state
-        const updatedList = taskLists.filter((list) => list.id !== listId);
-        setTaskLists(updatedList);
+  //       // Remove from local state
+  //       const updatedList = taskLists.filter((list) => list.id !== listId);
+  //       setTaskLists(updatedList);
 
-        // If the deleted list was selected, select another list
-        if (selectedList?.id === listId) {
-          const newSelectedList = taskLists.find((list) => list.id !== listId);
-          setSelectedList(newSelectedList || null);
-        }
-      } catch (err) {
-        console.error("Error deleting task list:", err);
-        Alert.alert("Error", "Could not delete task list. Please try again.");
-      }
-    };
+  //       // If the deleted list was selected, select another list
+  //       if (selectedList?.id === listId) {
+  //         const newSelectedList = taskLists.find((list) => list.id !== listId);
+  //         setSelectedList(newSelectedList || null);
+  //       }
+  //     } catch (err) {
+  //       console.error("Error deleting task list:", err);
+  //       Alert.alert("Error", "Could not delete task list. Please try again.");
+  //     }
+  //   };
   
-  // Show rename dialog
-    const handleRenameList = (list: List) => {
-      // Store the specific list ID we want to rename
-      const listIdToRename = list.id;
-      const currentListName = list.name;
+  // // Show rename dialog
+  //   const handleRenameList = (list: List) => {
+  //     // Store the specific list ID we want to rename
+  //     const listIdToRename = list.id;
+  //     const currentListName = list.name;
   
-      Alert.prompt(
-        "Rename List",
-        "Enter a new name for the list:",
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
-          {
-            text: "Rename",
-            onPress: (value) => {
-              if (value && value.trim()) {
-                // Pass the specific list ID to ensure we rename the right list
-                renameTaskList(listIdToRename, value.trim());
-              }
-            },
-          },
-        ],
-        "plain-text",
-        currentListName
-      );
-    };
+  //     Alert.prompt(
+  //       "Rename List",
+  //       "Enter a new name for the list:",
+  //       [
+  //         {
+  //           text: "Cancel",
+  //           style: "cancel",
+  //         },
+  //         {
+  //           text: "Rename",
+  //           onPress: (value) => {
+  //             if (value && value.trim()) {
+  //               // Pass the specific list ID to ensure we rename the right list
+  //               renameTaskList(listIdToRename, value.trim());
+  //             }
+  //           },
+  //         },
+  //       ],
+  //       "plain-text",
+  //       currentListName
+  //     );
+  //   };
   
-  // Rename a task list
-    const renameTaskList = async (listId: string, newName: string) => {
-      try {
-        const listRef = doc(db, "task_lists", listId);
-        await updateDoc(listRef, {
-          name: newName,
-        });
+  // // Rename a task list
+  //   const renameTaskList = async (listId: string, newName: string) => {
+  //     try {
+  //       const listRef = doc(db, "task_lists", listId);
+  //       await updateDoc(listRef, {
+  //         name: newName,
+  //       });
   
-        // Update local state with the specific list ID
-        let updatedList = taskLists.map((list) => {
-          if (list.id === listId) {
-            return { ...list, name: newName };
-          }
-          return list;
-        });
-        setTaskLists(updatedList);
-      } catch (err) {
-        console.error("Error renaming task list:", err);
-        Alert.alert("Error", "Could not rename task list. Please try again.");
-      }
-    };
+  //       // Update local state with the specific list ID
+  //       let updatedList = taskLists.map((list) => {
+  //         if (list.id === listId) {
+  //           return { ...list, name: newName };
+  //         }
+  //         return list;
+  //       });
+  //       setTaskLists(updatedList);
+  //     } catch (err) {
+  //       console.error("Error renaming task list:", err);
+  //       Alert.alert("Error", "Could not rename task list. Please try again.");
+  //     }
+  //   };
 
   const updateListLocation = async (list: List, marker: ListMarker) => {
     let listId = list.id;
@@ -208,65 +204,11 @@ export default function HorizontalScrollList({
     
   };
   
-  const LIST_MENU_ACTIONS = [
-    {
-      title: "Rename",
-      systemIcon: Platform.OS === "ios" ? "square.and.pencil" : undefined,
-      id: Platform.OS === "android" ? "edit" : undefined,
-      destructive: false,
-    },
-    
-    {
-      title: "Set location",
-      systemIcon: Platform.OS === "ios" ? "location" : undefined,
-      id: Platform.OS === "android" ? "location" : undefined,
-      destructive: false,
-    },
-    {
-      title: "Delete",
-      systemIcon: Platform.OS === "ios" ? "trash" : undefined,
-      id: Platform.OS === "android" ? "delete" : undefined,
-      destructive: true,
-    },
-  ];
-
   // New renderListWithContextMenu function
   const renderListWithContextMenu = (list: List, index: number) => {
     return (
       <View key={`list_${list.id}_${index}`}>
-        <ContextMenu
-          actions={LIST_MENU_ACTIONS}
-          onPress={(e) => {
-            // Handle menu action selection
-            if (e.nativeEvent.index === 0) {
-              // Rename action
-              handleRenameList(list);
-            } else if (e.nativeEvent.index === 1) {
-              // Set location action
-              setIsMapModalVisible(true);
-            } else if (e.nativeEvent.index === 2) { 
-              // Delete action
-              Alert.alert(
-                "Delete List",
-                `Are you sure you want to delete "${list.name}"? All tasks in this list will also be deleted.`,
-                [
-                  {
-                    text: "Cancel",
-                    style: "cancel",
-                  },
-                  {
-                    text: "Delete",
-                    onPress: () => deleteList(list.id),
-                    style: "destructive",
-                  },
-                ]
-              );
-            }
-          }}
-          previewBackgroundColor="#f9f9f9"
-        >
-          {renderListItem(list)}
-        </ContextMenu>
+        {renderListItem(list)}
       </View>
     );
   };
@@ -293,7 +235,7 @@ export default function HorizontalScrollList({
       </ScrollView>
 
       <NewListModal
-        isVisible={isNewListModalVisible}
+        visible={isNewListModalVisible}
         onClose={() => setIsNewListModalVisible(false)}
         onCreateList={createNewTaskList}
         newListName={newListName}
@@ -310,6 +252,15 @@ export default function HorizontalScrollList({
             updateListLocation(selectedList, marker);
           }
         }}
+      />
+
+      <EditListModal
+        visible={isEditListModalVisible}
+        onClose={() => setIsEditListModalVisible(false)}
+        onEditList={handleEditList}
+        newListName={newListName}
+        setNewListName={setNewListName}
+        setIsMapModalVisible={setIsMapModalVisible}
       />
 
     </View>

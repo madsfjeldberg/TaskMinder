@@ -6,7 +6,6 @@ export default {
   icon: "./assets/images/web/apple-touch-icon.png",
   scheme: "taskminder",
   userInterfaceStyle: "automatic",
-  newArchEnabled: true,
   owner: "fjeldberg",
   ios: {
     icon: "./assets/images/ios/AppIcon~ios-marketing.png",
@@ -73,6 +72,10 @@ export default {
         purpose: "maskable"
       }
     ]
+  },
+  expo: {
+    "jsEngine": "hermes",
+    "bridgeless": false,
   },
   plugins: [
     [

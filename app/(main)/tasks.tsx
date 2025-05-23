@@ -20,11 +20,9 @@ import {
 import { db } from "@/database/firebase";
 import { Feather } from "@expo/vector-icons";
 import TaskList from "@/components/custom/TaskList";
-import { Task, List } from "@/types/types";
+import { Task, List, newTask } from "@/types/types";
 import HorizontalListScroll from "@/components/custom/HorizontalScrollList";
 import api from "@/database/api";
-import { MenuProvider } from "react-native-popup-menu";
-import ContextMenu from "react-native-context-menu-view";
 
 export default function TasksScreen() {
 
@@ -37,18 +35,18 @@ export default function TasksScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
   const [editing, setEditing] = useState<{
-    taskId: string | null;
+    id: number | null;
     text: string;
   }>({
-    taskId: null,
+    id: null,
     text: "",
   });
 
   // Fetch task lists from Firestore
   useEffect(() => {
     const fetchTaskLists = async () => {
-      let lists = await api.fetchTaskLists(selectedList) || [];
-      
+      let lists = await api.fetchTaskLists() || [];
+
       try {
         setListsLoading(true);
         setTaskLists(lists);
@@ -96,94 +94,25 @@ export default function TasksScreen() {
   const createNewTask = async () => {
     try {
       // Create an empty task
-      const newTask = {
-        title: "",
-        completed: false,
-        createdAt: serverTimestamp(),
+      const newTask: newTask = {
+        name: "",
         listId: selectedList?.id,
+        completed: false,
         location: null,
       };
 
-      // Add new task to Firestore
-      const docRef = await addDoc(collection(db, "tasks"), newTask);
+      const createdTask = await api.createTask(newTask);
 
-      // Add to local state
-      const taskWithId: Task = {
-        id: docRef.id,
-        title: newTask.title,
-        completed: newTask.completed,
-        location: null,
-      };
-
-      setTasks((prev) => [taskWithId, ...prev]);
+      setTasks([...tasks, createdTask[0]]);
 
       // Set as editing
       setEditing({
-        taskId: docRef.id,
+        id: createdTask[0].id,
         text: "",
       });
     } catch (err) {
       console.error("Error creating new task:", err);
       Alert.alert("Error", "Failed to create new task. Please try again.");
-    }
-  };
-
-  // // Delete a task
-  // const deleteTask = async (taskId: string) => {
-  //   try {
-  //     // Remove from Firestore
-  //     const taskRef = doc(db, "tasks", taskId);
-  //     await deleteDoc(taskRef);
-
-  //     // Remove from local state
-  //     setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
-
-  //     // Reset editing state if needed
-  //     if (editing.taskId === taskId) {
-  //       setEditing({
-  //         taskId: null,
-  //         text: "",
-  //       });
-  //     }
-  //   } catch (err) {
-  //     console.error("Error deleting task:", err);
-  //     Alert.alert("Error", "Could not delete task. Please try again.");
-  //   }
-  // };
-
-  // Save task after editing
-  const saveTaskTitle = async (taskId: string) => {
-    // if (!editing.text.trim()) {
-    //   // If empty, delete the task
-    //   try {
-    //     await deleteTask(taskId);
-    //   } catch (err) {
-    //     console.error("Error deleting empty task:", err);
-    //   }
-    //   return;
-    // }
-
-    try {
-      const taskRef = doc(db, "tasks", taskId);
-      await updateDoc(taskRef, {
-        title: editing.text.trim(),
-      });
-
-      // Update local state
-      setTasks((prevTasks) =>
-        prevTasks.map((task) =>
-          task.id === taskId ? { ...task, title: editing.text.trim() } : task
-        )
-      );
-
-      // Exit editing mode
-      setEditing({
-        taskId: null,
-        text: "",
-      });
-    } catch (err) {
-      console.error("Error updating task title:", err);
-      Alert.alert("Error", "Could not update task. Please try again.");
     }
   };
 
@@ -199,7 +128,6 @@ export default function TasksScreen() {
 
   {/* MAIN RENDER */}
   return (
-    <MenuProvider>
       <View style={styles.container}>
         {/* Task Lists Horizontal Scroll */}
         <HorizontalListScroll
@@ -245,7 +173,7 @@ export default function TasksScreen() {
               onPress={createNewTask}
             >
               <Text style={styles.createListButtonText}>Create Task</Text>
-            </TouchableOpacity>
+                </TouchableOpacity>
           </View>
         ) : (
           // Task list
@@ -254,13 +182,11 @@ export default function TasksScreen() {
             setTasks={setTasks}
             editing={editing}
             setEditing={setEditing}
-            saveTaskTitle={saveTaskTitle}
             createNewTask={createNewTask}
           />
         )}
 
       </View>
-    </MenuProvider>
   );
 }
 

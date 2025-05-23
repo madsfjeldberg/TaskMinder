@@ -1,51 +1,30 @@
 import React from "react";
-import { useEffect } from "react";
-import { BackHandler, Platform } from "react-native";
 import {
   View,
   Text,
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  Modal,
+  KeyboardAvoidingView
 } from "react-native";
-import Modal from "react-native-modal";
 import { NewListModalProps } from "@/types/types";
 
 export default function NewListModal({
-  isVisible,
+  visible,
   onClose,
   onCreateList,
   newListName,
   setNewListName,
 }: NewListModalProps) {
 
-  useEffect(() => {
-    if (isVisible) {
-      if (Platform.OS === "android") {
-        const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
-          onClose();
-          return true; // Prevent default behavior
-        });
-      
-
-        return () => backHandler.remove(); // Clean up the event listener
-      }
-  }
-}, [isVisible, onClose]);
-
   return (
     <Modal
-      isVisible={isVisible}
-      onBackdropPress={onClose}
-      onBackButtonPress={onClose}
-      backdropOpacity={0.4}
-      backdropTransitionOutTiming={0}
-      animationIn="slideInUp"
-      animationOut="fadeOut"
-      useNativeDriver={true}
-      avoidKeyboard={true}
-      style={styles.modal}
+      visible={visible}
+      transparent={true}
+      animationType="fade"
     >
+    <KeyboardAvoidingView style={styles.modal}>
       <View style={styles.modalContent}>
         <Text style={styles.modalTitle}>Create New List</Text>
 
@@ -74,15 +53,17 @@ export default function NewListModal({
           </TouchableOpacity>
         </View>
       </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   modal: {
-    margin: 0,
-    justifyContent: "flex-start",
-    paddingTop: 150,
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 50,
   },
   modalContent: {
     width: "85%",

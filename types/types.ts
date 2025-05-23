@@ -1,8 +1,7 @@
-import { ListRenderItem } from "react-native";
-
 type Task = {
-  id: string;
-  title: string;
+  id: number;
+  listId: number | undefined;
+  name: string;
   completed: boolean;
   location: {
     latitude: number;
@@ -10,10 +9,19 @@ type Task = {
   } | null;
 };
 
-type List = {
-  id: string;
+type newTask = {
   name: string;
-  createdAt: Date;
+  listId: number | undefined;
+  completed: boolean;
+  location: {
+    latitude: number;
+    longitude: number;
+  } | null;
+}
+
+type List = {
+  id: number;
+  name: string;
   userId: string;
   location: ListLocation | null;
 };
@@ -30,24 +38,32 @@ type TaskListProps = {
   tasks: Task[];
   setTasks: (tasks: Task[]) => void;
   editing: {
-    taskId: string | null;
+    id: number | null;
     text: string;
   };
   setEditing: (editing: {
-    taskId: string | null;
+    id: number | null;
     text: string;
   }) => void;
-  saveTaskTitle: (id: string) => void;
   createNewTask: () => void;
 };
 
 type NewListModalProps = {
-  isVisible: boolean;
+  visible: boolean;
   onClose: () => void;
   onCreateList: () => void;
   newListName: string;
   setNewListName: (name: string) => void;
 };
+
+type EditListModalProps = {
+  visible: boolean;
+  onClose: () => void;
+  onEditList: () => void;
+  newListName: string;
+  setNewListName: (name: string) => void;
+  setIsMapModalVisible: (visible: boolean) => void;
+}
 
 type MapModalProps = {
   isMapModalVisible: boolean;
@@ -87,10 +103,12 @@ type ListLocation = {
 
 export type {
   Task,
+  newTask,
   List,
   TaskListProps,
   HorizontalScrollListProps,
   NewListModalProps,
+  EditListModalProps,
   MapModalProps,
   TaskMarker,
   UserLocation,

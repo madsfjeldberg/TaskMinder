@@ -4,11 +4,9 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { useFonts } from "expo-font";
 import { useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
 import "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { View } from "react-native";
@@ -17,29 +15,19 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 import { TitleBar } from "@/components/TitleBar";
 import { Feather } from "@expo/vector-icons";
 import { Drawer } from "expo-router/drawer";
-import { signOut } from "firebase/auth";
 import {
   DrawerItemList,
   DrawerItem,
   DrawerContentScrollView,
 } from "@react-navigation/drawer";
-import { auth } from "@/database/firebase";
+import auth from "@/database/auth";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function MainLayout() {
   const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require("@/assets/fonts/SpaceMono-Regular.ttf"),
-  });
   const router = useRouter();
-
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
 
   function CustomDrawerContent(props: any) {
     return (
@@ -51,8 +39,8 @@ export default function MainLayout() {
           <DrawerItem
             label="Log Out"
             icon={() => <Feather name="log-out" size={24} color="#e74c3c" />}
-            onPress={() => {
-              signOut(auth);
+            onPress={async () => {
+              await auth.logout();
               props.navigation.closeDrawer();
               router.replace("/");
             }}
