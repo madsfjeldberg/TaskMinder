@@ -2,8 +2,6 @@ import React from "react";
 import Auth from "@/components/custom/Auth";
 import { SafeAreaView, KeyboardAvoidingView, StyleSheet, Platform } from "react-native";
 
-
-
 export default function Index() { 
   return (
   <SafeAreaView style={styles.safeArea}>

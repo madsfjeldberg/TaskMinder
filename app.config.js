@@ -76,6 +76,11 @@ export default {
   expo: {
     "jsEngine": "hermes",
     "bridgeless": false,
+    "extra": {
+      "eas": {
+        "projectId": "1f5c8d46-45d9-46a7-8289-bcc62be298c5"
+      }
+    }
   },
   plugins: [
     [
@@ -101,8 +106,8 @@ export default {
   },
   extra: {
     eas: {
-      projectId: "df8518f0-2cdb-4277-bbb2-062295af2c9e",
-    },
+      "projectId": "1f5c8d46-45d9-46a7-8289-bcc62be298c5"
+    }
   },
   secrets: {
     FIREBASE_API_KEY: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,

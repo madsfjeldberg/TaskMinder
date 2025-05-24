@@ -4,12 +4,9 @@ import {
   Text,
   View,
   StyleSheet,
-  KeyboardAvoidingView,
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  Platform,
-  SafeAreaView,
 } from "react-native";
 import { router } from "expo-router";
 import { ThemedText } from "@/components/ThemedText";

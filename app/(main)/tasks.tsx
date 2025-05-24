@@ -5,29 +5,24 @@ import {
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
-  TextInput,
   Alert,
-  Platform,
 } from "react-native";
-import {
-  collection,
-  doc,
-  updateDoc,
-  addDoc,
-  serverTimestamp,
-  deleteDoc,
-} from "firebase/firestore";
-import { db } from "@/database/firebase";
 import { Feather } from "@expo/vector-icons";
 import TaskList from "@/components/custom/TaskList";
-import { Task, List, newTask } from "@/types/types";
+import { Task, List, newTask, UserLocation } from "@/types/types";
 import HorizontalListScroll from "@/components/custom/HorizontalScrollList";
 import api from "@/database/api";
+import { getLatestLocation, registerGeofences } from "@/util/location";
 
 export default function TasksScreen() {
 
+  const [userLocation, setUserLocation] = useState<UserLocation>({
+    latitude: 55.676098,
+    longitude: 12.568337,
+    latitudeDelta: 0.2,
+    longitudeDelta: 0.2,
+  });
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [taskLists, setTaskLists] = useState<List[]>([]);
   const [selectedList, setSelectedList] = useState<List | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,10 +37,27 @@ export default function TasksScreen() {
     text: "",
   });
 
-  // Fetch task lists from Firestore
+  // Fetch task lists
   useEffect(() => {
+    (async () => {
+          let location = await getLatestLocation(); 
+          let newLocation = {
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+            latitudeDelta: 0.1,
+            longitudeDelta: 0.1,
+          }
+          setUserLocation(newLocation);
+    })();
+    
+
     const fetchTaskLists = async () => {
       let lists = await api.fetchTaskLists() || [];
+
+      // register geofences for each list
+      if (lists) {
+        registerGeofences(lists);
+      }
 
       try {
         setListsLoading(true);
@@ -64,7 +76,7 @@ export default function TasksScreen() {
     fetchTaskLists();
   }, []);
 
-  // // Fetch tasks from Firestore, filtered by selected list
+  // Fetch tasks filtered by selected list
   useEffect(() => {
     if (!selectedList) {
       return;
@@ -85,10 +97,6 @@ export default function TasksScreen() {
     };
     fetchTasks();
   }, [selectedList]);
-
-  
-
-  
 
   // Create a new task
   const createNewTask = async () => {

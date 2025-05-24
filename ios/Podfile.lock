@@ -336,10 +336,13 @@ PODS:
     - ExpoModulesCore
   - ExpoSystemUI (5.0.7):
     - ExpoModulesCore
-  - ExpoUI (0.1.1-alpha.7):
+  - ExpoUI (0.0.2):
     - ExpoModulesCore
   - ExpoWebBrowser (14.1.6):
     - ExpoModulesCore
+  - EXTaskManager (13.1.5):
+    - ExpoModulesCore
+    - UMAppLoader
   - EXUpdatesInterface (1.1.0):
     - ExpoModulesCore
   - fast_float (6.1.4)
@@ -1689,8 +1692,6 @@ PODS:
     - React-jsiexecutor
     - React-RCTFBReactNativeSpec
     - ReactCommon/turbomodule/core
-  - react-native-context-menu-view (1.19.0):
-    - React
   - react-native-ios-context-menu (3.1.2):
     - ContextMenuAuxiliaryPreview (~> 0.5)
     - DGSwiftUtilities
@@ -1768,6 +1769,81 @@ PODS:
     - React-hermes
     - React-ImageManager
     - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
+  - react-native-safe-area-context (5.4.1):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.11.18.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - react-native-safe-area-context/common (= 5.4.1)
+    - react-native-safe-area-context/fabric (= 5.4.1)
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
+  - react-native-safe-area-context/common (5.4.1):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.11.18.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
+  - react-native-safe-area-context/fabric (5.4.1):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.11.18.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - react-native-safe-area-context/common
     - React-NativeModulesApple
     - React-RCTFabric
     - React-renderercss
@@ -2412,6 +2488,7 @@ DEPENDENCIES:
   - ExpoSystemUI (from `../node_modules/expo-system-ui/ios`)
   - "ExpoUI (from `../node_modules/@expo/ui/ios`)"
   - ExpoWebBrowser (from `../node_modules/expo-web-browser/ios`)
+  - EXTaskManager (from `../node_modules/expo-task-manager/ios`)
   - EXUpdatesInterface (from `../node_modules/expo-updates-interface/ios`)
   - fast_float (from `../node_modules/react-native/third-party-podspecs/fast_float.podspec`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
@@ -2451,11 +2528,11 @@ DEPENDENCIES:
   - React-logger (from `../node_modules/react-native/ReactCommon/logger`)
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
-  - react-native-context-menu-view (from `../node_modules/react-native-context-menu-view`)
   - react-native-ios-context-menu (from `../node_modules/react-native-ios-context-menu`)
   - react-native-ios-utilities (from `../node_modules/react-native-ios-utilities`)
   - react-native-maps (from `../node_modules/react-native-maps`)
   - "react-native-menu (from `../node_modules/@react-native-menu/menu`)"
+  - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - react-native-webview (from `../node_modules/react-native-webview`)
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
   - React-oscompat (from `../node_modules/react-native/ReactCommon/oscompat`)
@@ -2572,6 +2649,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@expo/ui/ios"
   ExpoWebBrowser:
     :path: "../node_modules/expo-web-browser/ios"
+  EXTaskManager:
+    :path: "../node_modules/expo-task-manager/ios"
   EXUpdatesInterface:
     :path: "../node_modules/expo-updates-interface/ios"
   fast_float:
@@ -2647,8 +2726,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon"
   React-microtasksnativemodule:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
-  react-native-context-menu-view:
-    :path: "../node_modules/react-native-context-menu-view"
   react-native-ios-context-menu:
     :path: "../node_modules/react-native-ios-context-menu"
   react-native-ios-utilities:
@@ -2657,6 +2734,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-maps"
   react-native-menu:
     :path: "../node_modules/@react-native-menu/menu"
+  react-native-safe-area-context:
+    :path: "../node_modules/react-native-safe-area-context"
   react-native-webview:
     :path: "../node_modules/react-native-webview"
   React-NativeModulesApple:
@@ -2773,8 +2852,9 @@ SPEC CHECKSUMS:
   ExpoSplashScreen: f524572afd81522e40850eaa7163e2ae99cce783
   ExpoSymbols: 5324de61341b396965a1cd3d2c738227b13d6a60
   ExpoSystemUI: 82c970cf8495449698e7343b4f78a0d04bcec9ee
-  ExpoUI: c915e9a4a91d78c3e1c3017ff94b51b472c54532
+  ExpoUI: 573838c97e1d37ae06ee84fd31d65dd2373ddc94
   ExpoWebBrowser: 06fb5f767f53ad53944b068cdd207984cb998712
+  EXTaskManager: a7a2d34c0fa6a459dcd9f50844ecbec886bd2da8
   EXUpdatesInterface: 7ff005b7af94ee63fa452ea7bb95d7a8ff40277a
   fast_float: 06eeec4fe712a76acc9376682e4808b05ce978b6
   FBLazyVector: 84b955f7b4da8b895faf5946f73748267347c975
@@ -2816,11 +2896,11 @@ SPEC CHECKSUMS:
   React-logger: 8edfcedc100544791cd82692ca5a574240a16219
   React-Mapbuffer: da73f30b000114058d6bc41490dcce204a8ede32
   React-microtasksnativemodule: 444c5701aece79629bb73bd9e7ad8937ae65238c
-  react-native-context-menu-view: 3a8fb510448efa9d477f645dafa889ef1c78daaa
   react-native-ios-context-menu: c422be33a2cd21b6ab58caaf2301335e6e96684c
   react-native-ios-utilities: 2d8c2596afad6c0cfb5faa2d6e1fa95821d53ee8
   react-native-maps: 9febd31278b35cd21e4fad2cf6fa708993be5dab
   react-native-menu: f683dfc6c942f8d44f48533385d8c5cf65bbabb1
+  react-native-safe-area-context: 8cf8caf5fc0f5a5d3581b650579af9c85c16be04
   react-native-webview: 2489d02c8e729bbd323dcb83ab9ea3b0a150b3f6
   React-NativeModulesApple: df8e5bc59e78ca3040ffbf41336889f3bd0fad68
   React-oscompat: ef5df1c734f19b8003e149317d041b8ce1f7d29c

@@ -16,7 +16,6 @@ import "react-native-gesture-handler";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useAuth } from "@/hooks/useAuth";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { periodicLocationUpdate } from "@/util/location";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -31,10 +30,9 @@ export default function RootLayout() {
   const router = useRouter();
   
   useEffect(() => {
-      if (loaded) {
-        SplashScreen.hideAsync();
-        periodicLocationUpdate();
-      }
+    if (loaded) {
+      SplashScreen.hideAsync();
+    }
     }, [loaded]);
 
   useEffect(() => {

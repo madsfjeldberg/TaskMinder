@@ -10,12 +10,11 @@ import {
 import { HorizontalScrollListProps, List, UserLocation, ListMarker } from "@/types/types";
 import NewListModal from "./NewListModal";
 import { Feather } from "@expo/vector-icons";
-import { getUserLocation } from "@/util/location";
 import MapModal from "./MapModal";
 import api from "@/database/api";
 import auth from "@/database/auth";
-import { HoldItem, HoldMenuProvider } from "react-native-hold-menu";
 import EditListModal from "./EditListModal";
+import { getLatestLocation } from "@/util/location";
 
 export default function HorizontalScrollList({
   taskLists,
@@ -24,23 +23,29 @@ export default function HorizontalScrollList({
   setSelectedList,
 }: HorizontalScrollListProps) {
 
-  const [userLocation, setUserLocation] = useState<UserLocation>({
-    latitude: 55.676098,
-    longitude: 12.568337,
-    latitudeDelta: 0.2,
-    longitudeDelta: 0.2,
-  });
+
   const [isNewListModalVisible, setIsNewListModalVisible] = React.useState(false);
   const [isEditListModalVisible, setIsEditListModalVisible] = React.useState(false);
   const [isMapModalVisible, setIsMapModalVisible] = React.useState(false);
   const [newListName, setNewListName] = React.useState("");
+  const [userLocation, setUserLocation] = useState({
+  latitude: 55.676098,
+  longitude: 12.568337,
+  latitudeDelta: 0.2,
+  longitudeDelta: 0.2,
+  });
 
-  // Ask for location permission on map modal open
   useEffect(() => {
-    (async () => {
-      let location = await getUserLocation();
-      setUserLocation(location);
-    })();
+    // (async () => {
+    //   let location = await getLatestLocation(); 
+    //   let newLocation = {
+    //     latitude: location.coords.latitude,
+    //     longitude: location.coords.longitude,
+    //     latitudeDelta: 0.1,
+    //     longitudeDelta: 0.1,
+    //   }
+    //   setUserLocation(newLocation);
+    // })();
   }, [isMapModalVisible]);
 
   // Create a new task list
@@ -74,10 +79,6 @@ export default function HorizontalScrollList({
       setIsNewListModalVisible(false);
     };
   
-  
-  
-
-
   // Render task list item
     const renderListItem = (list: List) => {
       const isSelected = selectedList?.id === list.id;
@@ -126,28 +127,6 @@ export default function HorizontalScrollList({
   //     } catch (err) {
   //       console.error("Error deleting task list:", err);
   //       Alert.alert("Error", "Could not delete task list. Please try again.");
-  //     }
-  //   };
-    
-  // // Rename a task list
-  //   const renameTaskList = async (listId: string, newName: string) => {
-  //     try {
-  //       const listRef = doc(db, "task_lists", listId);
-  //       await updateDoc(listRef, {
-  //         name: newName,
-  //       });
-  
-  //       // Update local state with the specific list ID
-  //       let updatedList = taskLists.map((list) => {
-  //         if (list.id === listId) {
-  //           return { ...list, name: newName };
-  //         }
-  //         return list;
-  //       });
-  //       setTaskLists(updatedList);
-  //     } catch (err) {
-  //       console.error("Error renaming task list:", err);
-  //       Alert.alert("Error", "Could not rename task list. Please try again.");
   //     }
   //   };
 

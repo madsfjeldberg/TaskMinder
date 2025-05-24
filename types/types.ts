@@ -114,5 +114,6 @@ export type {
   MapModalProps,
   TaskMarker,
   UserLocation,
+  ListLocation,
   ListMarker,
 };

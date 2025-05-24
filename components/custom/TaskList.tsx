@@ -1,12 +1,13 @@
-import React, { useRef } from "react";
+import React from "react";
 import { FlatList } from "react-native";
 import { TouchableOpacity } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { StyleSheet } from "react-native";
 import { TaskListProps } from "@/types/types";
-import { Alert, Text, View, TextInput } from "react-native";
+import { Text, View, TextInput } from "react-native";
 import { Task } from "@/types/types";
 import api from "@/database/api";
+import { router } from "expo-router";
 
 export default function TaskList({
   tasks,

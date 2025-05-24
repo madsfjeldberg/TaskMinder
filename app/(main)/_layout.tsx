@@ -11,19 +11,19 @@ import {
   DrawerContentScrollView,
 } from "@react-navigation/drawer";
 import auth from "@/database/auth";
-import { periodicLocationUpdate } from "@/util/location";
+import { requestPermission } from "@/util/location";
 
 
 export default function MainLayout() {
   const router = useRouter();
 
   useEffect(() => {
-    const locationUpdate = async () => {
-      await periodicLocationUpdate();
-    };
-    locationUpdate();
+    (async () => {
+      await requestPermission();
+    })();
+
   }, []);
-  
+
 
   function CustomDrawerContent(props: any) {
     return (

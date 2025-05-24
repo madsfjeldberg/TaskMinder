@@ -87,7 +87,7 @@ export default function MapModal({
                   latitude: currentMarker.latitude,
                   longitude: currentMarker.longitude,
                 }}
-                radius={100}
+                radius={200}
                 strokeWidth={1}
                 strokeColor="rgba(0, 122, 255, 0.5)"
                 fillColor="rgba(0, 122, 255, 0.2)"
