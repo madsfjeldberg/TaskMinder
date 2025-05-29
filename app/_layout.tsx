@@ -4,9 +4,7 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { useFonts } from "expo-font";
 import { useRouter, Slot } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import "react-native-reanimated";
@@ -18,22 +16,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
-  });
-
   const { user, loading } = useAuth();
   const router = useRouter();
-  
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-    }, [loaded]);
 
   useEffect(() => {
     // If we can't go back, we're at the root
@@ -48,7 +35,7 @@ export default function RootLayout() {
     }
   }, [user, loading, router]);
 
-  if (!loaded || loading) {
+  if (loading) {
     return (
       <SafeAreaProvider>
         <ThemeProvider

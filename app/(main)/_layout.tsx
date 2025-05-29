@@ -52,6 +52,7 @@ export default function MainLayout() {
       <Drawer
         screenOptions={{
           headerShown: true,
+          
           header: () => <TitleBar />,
           drawerPosition: "right",
           drawerStyle: {

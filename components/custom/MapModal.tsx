@@ -4,19 +4,42 @@ import MapView, { Circle, Marker } from "react-native-maps";
 import { MapModalProps } from "@/types/types";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
+import { getLatestLocation } from "@/util/location";
 
 export default function MapModal({
   isMapModalVisible,
   setIsMapModalVisible,
-  userLocation,
   listLocation,
   onLocationSelect,
 }: MapModalProps) {
   const insets = useSafeAreaInsets();
 
+  // Default location central Copenhagen
+  const [userLocation, setUserLocation] = useState({
+    latitude: 55.676098, 
+    longitude: 12.568337, 
+    latitudeDelta: 0.2,
+    longitudeDelta: 0.2,
+  });
+
   // State for current marker
   const [currentMarker, setCurrentMarker] = useState(listLocation);
-  
+
+  // Set initial user location when modal opens, if available
+  useEffect(() => {
+    (async () => {
+      let location = await getLatestLocation();
+      if (location) {
+        setUserLocation({
+          latitude: location.latitude,
+          longitude: location.longitude,
+          latitudeDelta: 0.1,
+          longitudeDelta: 0.1,
+        });
+      }
+    })();
+  }, []);
+
   // Update current marker when task location changes
   useEffect(() => {
     setCurrentMarker(listLocation);
@@ -66,7 +89,6 @@ export default function MapModal({
             style={styles.map}
             initialRegion={userLocation}
             showsUserLocation={true}
-            followsUserLocation={true}
             showsMyLocationButton={true}
             showsScale={true}
             showsBuildings={true}

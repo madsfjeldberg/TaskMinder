@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,14 +7,13 @@ import {
   ScrollView,
   Alert,
 } from "react-native";
-import { HorizontalScrollListProps, List, UserLocation, ListMarker } from "@/types/types";
+import { HorizontalScrollListProps, List, ListMarker } from "@/types/types";
 import NewListModal from "./NewListModal";
 import { Feather } from "@expo/vector-icons";
 import MapModal from "./MapModal";
-import api from "@/database/api";
-import auth from "@/database/auth";
+import listApi from "@/database/api/listApi";
+import { useAuth } from "@/hooks/useAuth";
 import EditListModal from "./EditListModal";
-import { getLatestLocation } from "@/util/location";
 
 export default function HorizontalScrollList({
   taskLists,
@@ -23,48 +22,32 @@ export default function HorizontalScrollList({
   setSelectedList,
 }: HorizontalScrollListProps) {
 
+  const [isNewListModalVisible, setIsNewListModalVisible] = useState(false);
+  const [isEditListModalVisible, setIsEditListModalVisible] = useState(false);
+  const [isMapModalVisible, setIsMapModalVisible] = useState(false);
+  const [newListName, setNewListName] = useState("");
 
-  const [isNewListModalVisible, setIsNewListModalVisible] = React.useState(false);
-  const [isEditListModalVisible, setIsEditListModalVisible] = React.useState(false);
-  const [isMapModalVisible, setIsMapModalVisible] = React.useState(false);
-  const [newListName, setNewListName] = React.useState("");
-  const [userLocation, setUserLocation] = useState({
-  latitude: 55.676098,
-  longitude: 12.568337,
-  latitudeDelta: 0.2,
-  longitudeDelta: 0.2,
-  });
-
-  useEffect(() => {
-    // (async () => {
-    //   let location = await getLatestLocation(); 
-    //   let newLocation = {
-    //     latitude: location.coords.latitude,
-    //     longitude: location.coords.longitude,
-    //     latitudeDelta: 0.1,
-    //     longitudeDelta: 0.1,
-    //   }
-    //   setUserLocation(newLocation);
-    // })();
-  }, [isMapModalVisible]);
+  const { user } = useAuth();
 
   // Create a new task list
-    const createNewTaskList = async () => {
+  const createNewTaskList = async () => {
+      if (!user) {
+        Alert.alert("Error", "User not found. Please log in again.");
+        return;
+      }
       if (!newListName.trim()) {
         Alert.alert("Error", "Please enter a list name");
         return;
       }
-      const currentUser = await auth.getCurrentUser();
-      const userId = currentUser?.data.user?.id;
-      if (!currentUser || !userId) {
-        return;
-      }
-      const response = await api.createList(newListName, userId, null);
+      
+      const response = await listApi.createList(newListName);
       if (!response) {
         Alert.alert("Error", "Failed to create new list. Please try again.");
         return;
       }
   
+      const userId = user.id;
+
       // Add to local state
       const newList: List = {
         id: response[0].id,
@@ -72,64 +55,14 @@ export default function HorizontalScrollList({
         userId: userId,
         location: null,
       };
-      
       setTaskLists([...taskLists, newList]);
       setSelectedList(newList);
+
+      // Reset states
       setNewListName("");
       setIsNewListModalVisible(false);
     };
   
-  // Render task list item
-    const renderListItem = (list: List) => {
-      const isSelected = selectedList?.id === list.id;
-  
-      return (
-        
-        <View key={list.id}>
-          <TouchableOpacity
-            style={[styles.listItem, isSelected && styles.isSelectedListItem]}
-            onPress={() => setSelectedList(list)}
-            onLongPress={() => {
-              setSelectedList(list);
-              setIsEditListModalVisible(true);
-              setNewListName(list.name);
-            }}
-          >
-            <Text
-              style={[
-                styles.listItemText,
-                isSelected && styles.selectedListItemText,
-              ]}
-            >
-              {list.name}
-            </Text>
-            </TouchableOpacity>
-          </View>
-      );
-    };
-  
-  // // Delete a task list
-  //   const deleteList = async (listId: string) => {
-  //     try {
-  //       // Remove from Firestore
-  //       const listRef = doc(db, "task_lists", listId);
-  //       await deleteDoc(listRef);
-  
-  //       // Remove from local state
-  //       const updatedList = taskLists.filter((list) => list.id !== listId);
-  //       setTaskLists(updatedList);
-
-  //       // If the deleted list was selected, select another list
-  //       if (selectedList?.id === listId) {
-  //         const newSelectedList = taskLists.find((list) => list.id !== listId);
-  //         setSelectedList(newSelectedList || null);
-  //       }
-  //     } catch (err) {
-  //       console.error("Error deleting task list:", err);
-  //       Alert.alert("Error", "Could not delete task list. Please try again.");
-  //     }
-  //   };
-
   const updateListLocation = async (list: List, marker: ListMarker) => {
     let listId = list.id;
     list.location = {
@@ -139,7 +72,7 @@ export default function HorizontalScrollList({
       longitudeDelta: 0.2,
     };
 
-    const updatedList = await api.updateList(list);
+    await listApi.updateList(list);
 
     let updatedTaskLists = taskLists.map((taskList) => {
       if (taskList.id === listId) {
@@ -166,29 +99,56 @@ export default function HorizontalScrollList({
 
     if (selectedList && selectedList.id === listId) {
       setSelectedList({ ...selectedList, location: newLocation });
-    }
-    
+    }   
+  };
+  
+  
+  // Render task list item
+  const renderListItem = (list: List) => {
+    const isSelected = selectedList?.id === list.id;
+
+    return (
+      <View key={list.id}>
+        <TouchableOpacity
+          style={[styles.listItem, isSelected && styles.isSelectedListItem]}
+          onPress={() => setSelectedList(list)}
+          onLongPress={() => {
+            setSelectedList(list);
+            setIsEditListModalVisible(true);
+            setNewListName(list.name);
+          }}
+        >
+          <Text
+            style={[
+              styles.listItemText,
+              isSelected && styles.selectedListItemText,
+            ]}
+          >
+            {list.name}
+          </Text>
+          </TouchableOpacity>
+        </View>
+    );
   };
   
   // New renderListWithContextMenu function
   const renderList = (list: List, index: number) => {
     return (
-      <View key={`list_${list.id}_${index}`}>
+      <View key={index}>
         {renderListItem(list)}
       </View>
     );
   };
 
   return (
+  <>
     <View style={styles.listsContainer}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.listsScrollContent}
       >
-        {/* Check for duplicate IDs and render uniquely */}
         {taskLists.map((list, index) => {
-          // Use unique compound key with index fallback
           return renderList(list, index);
         })}
 
@@ -199,39 +159,38 @@ export default function HorizontalScrollList({
           <Feather name="plus" size={24} color="#3498db" />
         </TouchableOpacity>
       </ScrollView>
+    </View>
 
-      <NewListModal
+    <NewListModal
         visible={isNewListModalVisible}
         onClose={() => setIsNewListModalVisible(false)}
         onCreateList={createNewTaskList}
         newListName={newListName}
         setNewListName={setNewListName}
-      />
+    />
 
-      <MapModal
-        isMapModalVisible={isMapModalVisible}
-        setIsMapModalVisible={setIsMapModalVisible}
-        userLocation={userLocation}
-        listLocation={selectedList?.location ?? null}
-        onLocationSelect={(marker) => {
-          if (selectedList) {
-            updateListLocation(selectedList, marker);
-          }
-        }}
-      />
+    <MapModal
+      isMapModalVisible={isMapModalVisible}
+      setIsMapModalVisible={setIsMapModalVisible}
+      listLocation={selectedList?.location ?? null}
+      onLocationSelect={(marker) => {
+        if (selectedList) {
+          updateListLocation(selectedList, marker);
+        }
+      }}
+    />
 
-      <EditListModal
-        taskLists={taskLists}
-        setTaskLists={setTaskLists}
-        selectedList={selectedList}
-        setSelectedList={setSelectedList}
-        visible={isEditListModalVisible}
-        setVisible={setIsEditListModalVisible}
-        onClose={() => setIsEditListModalVisible(false)}
-        setIsMapModalVisible={setIsMapModalVisible}
-      />
-
-    </View>
+    <EditListModal
+      taskLists={taskLists}
+      setTaskLists={setTaskLists}
+      selectedList={selectedList}
+      setSelectedList={setSelectedList}
+      visible={isEditListModalVisible}
+      setVisible={setIsEditListModalVisible}
+      onClose={() => setIsEditListModalVisible(false)}
+      setIsMapModalVisible={setIsMapModalVisible}
+    />
+  </>
   );
 }
 
@@ -267,14 +226,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   isSelectedListItem: {
-    borderWidth: 1,
-    borderColor: "#3498db",
+    backgroundColor: "#3498db",
   },
   listItemText: {
     fontWeight: "600",
     fontSize: 16,
   },
   selectedListItemText: {
-    fontWeight: "700",
+    fontWeight: "600",
+    fontSize: 16,
+    color: "#fff",
   },
 });

@@ -33,9 +33,9 @@ const logout = async () => {
   return true;
 };
 
-const getCurrentUser = () => {
-  const user = supabase.auth.getUser();
-  return user;
+const getCurrentUser = async () => {
+  const response = await supabase.auth.getUser();
+  return response.data.user;
 };
 
 const auth = {

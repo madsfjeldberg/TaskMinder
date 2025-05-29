@@ -1,5 +1,4 @@
 import React from "react";
-
 import {
   View,
   Text,
@@ -12,8 +11,7 @@ import {
 } from "react-native";
 import { EditListModalProps } from "@/types/types";
 import { List } from "@/types/types";
-import api from "@/database/api";
-
+import listApi from "@/database/api/listApi";
 
 export default function EditListModal({
   taskLists,
@@ -23,14 +21,38 @@ export default function EditListModal({
   visible,
   setVisible,
   onClose,
-  setIsMapModalVisible
+  setIsMapModalVisible,
 }: EditListModalProps) {
-
-  const [newListName, setNewListName] = React.useState(selectedList?.name || "");
+  const [newListName, setNewListName] = React.useState(
+    selectedList?.name || ""
+  );
 
   const openMapModal = () => {
     setVisible(false);
     setIsMapModalVisible(true);
+  };
+
+  // delete list handler
+  const handleDeleteList = () => {
+    if (!selectedList) return;
+    Alert.alert("Delete List", "Are you sure you want to delete this list?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await listApi.deleteTaskList(selectedList.id);
+            const remaining = taskLists.filter((l) => l.id !== selectedList.id);
+            setTaskLists(remaining);
+            setSelectedList(remaining[0] || null);
+            setVisible(false);
+          } catch {
+            Alert.alert("Error", "Could not delete list");
+          }
+        },
+      },
+    ]);
   };
 
   const handleEditList = async () => {
@@ -44,7 +66,7 @@ export default function EditListModal({
     }
     selectedList.name = newListName.trim();
 
-    const updatedList = await api.updateList({
+    const updatedList = await listApi.updateList({
       ...selectedList,
       name: newListName.trim(),
     });
@@ -52,7 +74,7 @@ export default function EditListModal({
       Alert.alert("Error", "Failed to update list. Please try again.");
       return;
     }
-  
+
     // Update local state
     const updatedTaskLists = taskLists.map((taskList) => {
       if (taskList.id === selectedList.id) {
@@ -60,58 +82,60 @@ export default function EditListModal({
       }
       return taskList;
     });
-  
+
     setTaskLists(updatedTaskLists);
     setSelectedList(selectedList);
     setNewListName("");
     setVisible(false);
-
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="fade"
-    >
-    <KeyboardAvoidingView style={styles.modal}>
-      <View style={styles.modalContent}>
-        <Text style={styles.modalTitle}>Edit List</Text>
+    <Modal visible={visible} transparent={true} animationType="fade">
+      <KeyboardAvoidingView style={styles.modal}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Edit List</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="List Name (e.g., Work, Home)"
-          placeholderTextColor="#999"
-          value={newListName}
-          onChangeText={setNewListName}
-          autoFocus
-        />
+          <TextInput
+            style={styles.input}
+            placeholder="List Name (e.g., Work, Home)"
+            placeholderTextColor="#999"
+            value={newListName}
+            onChangeText={setNewListName}
+            autoFocus
+          />
 
           <View style={styles.modalButtons}>
             {/* Cancel Button */}
-          <TouchableOpacity
-            style={[styles.modalButton, styles.cancelButton]}
-            onPress={onClose}
-          >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.cancelButton]}
+              onPress={onClose}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
 
+            {/* Delete List */}
+            <TouchableOpacity
+              style={[styles.modalButton, styles.deleteButton]}
+              onPress={handleDeleteList}
+            >
+              <Text style={styles.deleteButtonText}>Delete</Text>
+            </TouchableOpacity>
             {/* Open Map Modal */}
-          <TouchableOpacity
-            style={[styles.modalButton, styles.createButton]}
-            onPress={() => openMapModal()}
-          >
-            <Text style={styles.createButtonText}>Location</Text>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.createButton]}
+              onPress={() => openMapModal()}
+            >
+              <Text style={styles.createButtonText}>Location</Text>
             </TouchableOpacity>
             {/* Update List */}
             <TouchableOpacity
-            style={[styles.modalButton, styles.createButton]}
-            onPress={handleEditList}
-          >
-            <Text style={styles.createButtonText}>Update</Text>
-          </TouchableOpacity>
+              style={[styles.modalButton, styles.createButton]}
+              onPress={handleEditList}
+            >
+              <Text style={styles.createButtonText}>Update</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -156,15 +180,16 @@ const styles = StyleSheet.create({
   },
   modalButtons: {
     flexDirection: "row",
+    flexWrap: "wrap",
     justifyContent: "space-between",
     width: "100%",
   },
   modalButton: {
+    width: "48%",
     paddingVertical: 12,
-    paddingHorizontal: 20,
     borderRadius: 8,
-    minWidth: 60,
     alignItems: "center",
+    marginBottom: 12,
   },
   cancelButton: {
     backgroundColor: "#f5f5f5",
@@ -177,6 +202,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#3498db",
   },
   createButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  deleteButton: {
+    backgroundColor: "#e74c3c",
+  },
+  deleteButtonText: {
     color: "#fff",
     fontWeight: "600",
   },

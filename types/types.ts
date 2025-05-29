@@ -9,6 +9,13 @@ type Task = {
   } | null;
 };
 
+type Subtask = {
+  id: number;
+  taskId: number;
+  name: string;
+  completed: boolean;
+}
+
 type newTask = {
   name: string;
   listId: number | undefined;
@@ -70,7 +77,6 @@ type EditListModalProps = {
 type MapModalProps = {
   isMapModalVisible: boolean;
   setIsMapModalVisible: (visible: boolean) => void;
-  userLocation: UserLocation;
   listLocation: ListLocation | null;
   onLocationSelect: (marker: TaskMarker) => void;
 };
@@ -105,6 +111,7 @@ type ListLocation = {
 
 export type {
   Task,
+  Subtask,
   newTask,
   List,
   TaskListProps,

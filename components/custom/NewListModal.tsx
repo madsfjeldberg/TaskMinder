@@ -30,7 +30,7 @@ export default function NewListModal({
 
         <TextInput
           style={styles.input}
-          placeholder="List Name (e.g., Work, Home, Vacation)"
+          placeholder="List Name (e.g., Work, Home)"
           placeholderTextColor="#999"
           value={newListName}
           onChangeText={setNewListName}

@@ -6,7 +6,7 @@ import { StyleSheet } from "react-native";
 import { TaskListProps } from "@/types/types";
 import { Text, View, TextInput } from "react-native";
 import { Task } from "@/types/types";
-import api from "@/database/api";
+import taskApi from "@/database/api/taskApi";
 import { router } from "expo-router";
 
 export default function TaskList({
@@ -21,7 +21,7 @@ export default function TaskList({
     if (!editing.text.trim()) {
       // If empty, delete the task
       try {
-        await api.deleteTask(task);
+        await taskApi.deleteTask(task);
       } catch (err) {
         console.error("Error deleting empty task:", err);
       }
@@ -37,7 +37,7 @@ export default function TaskList({
     }
     task.name = editing.text;
 
-    await api.updateTask(task);
+    await taskApi.updateTask(task);
 
     let updatedTasks = tasks.map((t) => (t.id === task.id ? task : t));
     setTasks(updatedTasks);
@@ -51,7 +51,7 @@ export default function TaskList({
   // Toggle task completion status
   const toggleTaskCompletion = async ( task: Task ) => {
     task.completed = !task.completed;
-    api.updateTask(task);
+    await taskApi.updateTask(task);
 
     let updatedTasks = tasks.map((t) => (t.id === task.id ? task : t));
     setTasks(updatedTasks);
@@ -68,7 +68,7 @@ export default function TaskList({
             onPress={() => {
               if (!isEditing) {
                 {/* open task view */ }
-                
+                router.push(`/tasks/${item.id}`);
               }
             }}
             onLongPress={() => {
@@ -103,7 +103,6 @@ export default function TaskList({
                     placeholder="Enter task name..."
                     autoFocus
                     onBlur={() => updateTask(item)}
-                    onSubmitEditing={() => updateTask(item)}
                   />
                 ) : (
                   <Text
@@ -121,6 +120,7 @@ export default function TaskList({
       );
     };
 
+  
   return (
     <>
       <FlatList
